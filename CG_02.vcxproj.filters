@@ -40,5 +40,8 @@
     <Object Include="tetrahedron.obj">
       <Filter>리소스 파일</Filter>
     </Object>
+    <Object Include="cone.obj">
+      <Filter>리소스 파일</Filter>
+    </Object>
   </ItemGroup>
 </Project>

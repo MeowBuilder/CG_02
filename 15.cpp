@@ -1,4 +1,4 @@
-#include <GL/glew.h>
+ï»¿#include <GL/glew.h>
 #include <GL/freeglut.h>
 #include <GL/freeglut_ext.h>
 
@@ -13,6 +13,11 @@
 
 using namespace std;
 
+random_device seeder;
+const auto seed = seeder.entropy() ? seeder() : time(nullptr);
+mt19937 eng(static_cast<mt19937::result_type>(seed));
+uniform_int_distribution<int> rand_obj(0, 4);
+
 const int WIN_X = 10, WIN_Y = 10;
 const int WIN_W = 800, WIN_H = 800;
 
@@ -20,10 +25,9 @@ const glm::vec3 background_rgb = glm::vec3(1.0f, 1.0f, 1.0f);
 
 bool isCulling = true;
 bool isFill = true;
-double xMove = 0.0, yMove = 0.0, zMove = 0.0;
 float xRotateAni = 30.0f;
 float yRotateAni = -30.0f;
-float zRotateAni = 0.0f;
+float yRotateworld = -30.0f;
 int rotateKey = 0;
 
 GLfloat mx = 0.0f;
@@ -36,20 +40,27 @@ GLuint trianglePositionVertexBufferObjectID, triangleColorVertexBufferObjectID;
 GLuint trianglePositionElementBufferObject;
 GLuint Line_VAO, Line_VBO;
 
+GLuint triangleVertexArrayObject_2;
+GLuint trianglePositionVertexBufferObjectID_2, triangleColorVertexBufferObjectID_2;
+GLuint trianglePositionElementBufferObject_2;
+
+GLUquadricObj* qobj;
+
 std::vector< unsigned int > vertexIndices, uvIndices, normalIndices;
 
 std::vector< glm::vec3 > vertices;
 std::vector< glm::vec2 > uvs;
 std::vector< glm::vec3 > normals;
 
-bool isCube = true;
+int left_obj = 0;
+int right_obj = 1;
 
 char* File_To_Buf(const char* file)
 {
 	ifstream in(file, ios_base::binary);
 
 	if (!in) {
-		cerr << file << "ÆÄÀÏ ¸øÃ£À½";
+		cerr << file << "íŒŒì¼ ëª»ì°¾ìŒ";
 		exit(1);
 	}
 
@@ -75,7 +86,7 @@ bool  Load_Object(const char* path) {
 
 	ifstream in(path);
 	if (!in) {
-		cerr << path << "ÆÄÀÏ ¸øÃ£À½";
+		cerr << path << "íŒŒì¼ ëª»ì°¾ìŒ";
 		exit(1);
 	}
 
@@ -130,7 +141,7 @@ bool Make_Shader_Program() {
 	if (!result)
 	{
 		glGetShaderInfoLog(vertexShader, 512, NULL, errorLog);
-		cerr << "ERROR: vertex shader ÄÄÆÄÀÏ ½ÇÆÐ\n" << errorLog << endl;
+		cerr << "ERROR: vertex shader ì»´íŒŒì¼ ì‹¤íŒ¨\n" << errorLog << endl;
 		return false;
 	}
 
@@ -141,7 +152,7 @@ bool Make_Shader_Program() {
 	if (!result)
 	{
 		glGetShaderInfoLog(fragmentShader, 512, NULL, errorLog);
-		cerr << "ERROR: fragment shader ÄÄÆÄÀÏ ½ÇÆÐ\n" << errorLog << endl;
+		cerr << "ERROR: fragment shader ì»´íŒŒì¼ ì‹¤íŒ¨\n" << errorLog << endl;
 		return false;
 	}
 
@@ -156,7 +167,7 @@ bool Make_Shader_Program() {
 	glGetProgramiv(shaderProgramID, GL_LINK_STATUS, &result);
 	if (!result) {
 		glGetProgramInfoLog(shaderProgramID, 512, NULL, errorLog);
-		cerr << "ERROR: shader program ¿¬°á ½ÇÆÐ\n" << errorLog << endl;
+		cerr << "ERROR: shader program ì—°ê²° ì‹¤íŒ¨\n" << errorLog << endl;
 		return false;
 	}
 	glUseProgram(shaderProgramID);
@@ -165,7 +176,7 @@ bool Make_Shader_Program() {
 }
 
 bool Set_VAO() {
-	isCube ? Load_Object("cube.obj") : Load_Object("tetrahedron.obj");
+	Load_Object("cube.obj");
 
 	float color[] = {
 	   0.5f, 0.0f, 0.5f,//4
@@ -240,7 +251,7 @@ bool Set_VAO() {
 
 	GLint positionAttribute = glGetAttribLocation(shaderProgramID, "positionAttribute");
 	if (positionAttribute == -1) {
-		cerr << "position ¼Ó¼º ¼³Á¤ ½ÇÆÐ" << endl;
+		cerr << "position ì†ì„± ì„¤ì • ì‹¤íŒ¨" << endl;
 		return false;
 	}
 	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -252,13 +263,49 @@ bool Set_VAO() {
 
 	GLint colorAttribute = glGetAttribLocation(shaderProgramID, "colorAttribute");
 	if (colorAttribute == -1) {
-		cerr << "color ¼Ó¼º ¼³Á¤ ½ÇÆÐ" << endl;
+		cerr << "color ì†ì„± ì„¤ì • ì‹¤íŒ¨" << endl;
 		return false;
 	}
 	glBindBuffer(GL_ARRAY_BUFFER, triangleColorVertexBufferObjectID);
 	glVertexAttribPointer(colorAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(colorAttribute);
 
+	glBindVertexArray(0);
+
+	Load_Object("tetrahedron.obj");
+
+	glGenVertexArrays(1, &triangleVertexArrayObject_2);
+	glBindVertexArray(triangleVertexArrayObject_2);
+
+
+	glGenBuffers(1, &trianglePositionVertexBufferObjectID_2);
+	glBindBuffer(GL_ARRAY_BUFFER, trianglePositionVertexBufferObjectID_2);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+
+	glGenBuffers(1, &trianglePositionElementBufferObject_2);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, trianglePositionElementBufferObject_2);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, vertexIndices.size() * sizeof(unsigned int), &vertexIndices[0], GL_STATIC_DRAW);
+
+	positionAttribute = glGetAttribLocation(shaderProgramID, "positionAttribute");
+	if (positionAttribute == -1) {
+		cerr << "position ì†ì„± ì„¤ì • ì‹¤íŒ¨" << endl;
+		return false;
+	}
+	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(positionAttribute);
+
+	glGenBuffers(1, &triangleColorVertexBufferObjectID_2);
+	glBindBuffer(GL_ARRAY_BUFFER, triangleColorVertexBufferObjectID_2);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(color), color, GL_STATIC_DRAW);
+
+	colorAttribute = glGetAttribLocation(shaderProgramID, "colorAttribute");
+	if (colorAttribute == -1) {
+		cerr << "color ì†ì„± ì„¤ì • ì‹¤íŒ¨" << endl;
+		return false;
+	}
+	glBindBuffer(GL_ARRAY_BUFFER, triangleColorVertexBufferObjectID_2);
+	glVertexAttribPointer(colorAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(colorAttribute);
 
 	glBindVertexArray(0);
 
@@ -291,13 +338,6 @@ GLvoid drawScene()
 
 	glBindVertexArray(Line_VAO);
 
-	glm::mat4 TR = glm::mat4(1.0f);
-	TR = glm::rotate(TR, glm::radians(xRotateAni), glm::vec3(1.0, 0.0, 0.0));
-	TR = glm::rotate(TR, glm::radians(yRotateAni), glm::vec3(0.0, 1.0, 0.0));
-	TR = glm::rotate(TR, glm::radians(zRotateAni), glm::vec3(0.0, 0.0, 1.0));
-	unsigned int modelLocation = glGetUniformLocation(shaderProgramID, "transform");
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
-
 	glBindBuffer(GL_ARRAY_BUFFER, Line_VBO);
 	glBufferData(GL_ARRAY_BUFFER, line.size() * sizeof(float), line.data(), GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
@@ -305,19 +345,118 @@ GLvoid drawScene()
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 
+	glm::mat4 TR = glm::mat4(1.0f);
+	TR = glm::rotate(TR, glm::radians(30.0f), glm::vec3(1.0, 0.0, 0.0));
+	TR = glm::rotate(TR, glm::radians(yRotateworld), glm::vec3(0.0, 1.0, 0.0));
+	unsigned int modelLocation = glGetUniformLocation(shaderProgramID, "transform");
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
 	glDrawArrays(GL_LINES, 0, line.size() / 3);
 
+	//ì˜¤ë¥¸ìª½ ë„í˜•
+
 	TR = glm::mat4(1.0f);
-	TR = glm::translate(TR, glm::vec3(xMove, yMove, zMove));
+	TR = glm::rotate(TR, glm::radians(30.0f), glm::vec3(1.0, 0.0, 0.0));
+	TR = glm::rotate(TR, glm::radians(yRotateworld), glm::vec3(0.0, 1.0, 0.0));
+	TR = glm::translate(TR, glm::vec3(0.5, 0.0, 0.0));
 	TR = glm::rotate(TR, glm::radians(xRotateAni), glm::vec3(1.0, 0.0, 0.0));
 	TR = glm::rotate(TR, glm::radians(yRotateAni), glm::vec3(0.0, 1.0, 0.0));
-	TR = glm::rotate(TR, glm::radians(zRotateAni), glm::vec3(0.0, 0.0, 1.0));
+	TR = glm::scale(TR, glm::vec3(0.25, 0.25, 0.25));
 	modelLocation = glGetUniformLocation(shaderProgramID, "transform");
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
 
-	glBindVertexArray(triangleVertexArrayObject);
+	switch (right_obj)
+	{
+	case 0:
+		glBindVertexArray(triangleVertexArrayObject);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		break;
+	case 1:
+		glBindVertexArray(triangleVertexArrayObject_2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		break;
+	case 2:
+		qobj = gluNewQuadric();
+		gluQuadricDrawStyle(qobj, GLU_LINE);
+		gluQuadricNormals(qobj, GLU_SMOOTH);
+		gluQuadricOrientation(qobj, GLU_OUTSIDE);
+		gluSphere(qobj, 1.5, 50, 50);
+		break;
+	case 3:
+		qobj = gluNewQuadric();
+		gluQuadricDrawStyle(qobj, GLU_LINE);
+		gluQuadricNormals(qobj, GLU_SMOOTH);
+		gluQuadricOrientation(qobj, GLU_OUTSIDE);
+		gluCylinder(qobj, 1.0, 0.0, 1.0, 20, 8);
+		break;
+	case 4:
+		qobj = gluNewQuadric();
+		gluQuadricDrawStyle(qobj, GLU_LINE);
+		gluQuadricNormals(qobj, GLU_SMOOTH);
+		gluQuadricOrientation(qobj, GLU_OUTSIDE);
+		gluCylinder(qobj, 1.0, 1.0, 2.0, 20, 8);
+		break;
+	default:
+		break;
+	}
 
-	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
+
+
+
+
+
+
+
+	//ì™¼ìª½ ë„í˜•
+
+	TR = glm::mat4(1.0f);
+	TR = glm::rotate(TR, glm::radians(30.0f), glm::vec3(1.0, 0.0, 0.0));
+	TR = glm::rotate(TR, glm::radians(yRotateworld), glm::vec3(0.0, 1.0, 0.0));
+	TR = glm::translate(TR, glm::vec3(-0.5, 0.0, 0.0));
+	TR = glm::rotate(TR, glm::radians(xRotateAni), glm::vec3(1.0, 0.0, 0.0));
+	TR = glm::rotate(TR, glm::radians(yRotateAni), glm::vec3(0.0, 1.0, 0.0));
+	TR = glm::scale(TR, glm::vec3(0.25, 0.25, 0.25));
+	modelLocation = glGetUniformLocation(shaderProgramID, "transform");
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
+
+	switch (left_obj)
+	{
+	case 0:
+		glBindVertexArray(triangleVertexArrayObject);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		break;
+	case 1:
+		glBindVertexArray(triangleVertexArrayObject_2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		break;
+	case 2:
+		qobj = gluNewQuadric();
+		gluQuadricDrawStyle(qobj, GLU_LINE);
+		gluQuadricNormals(qobj, GLU_SMOOTH);
+		gluQuadricOrientation(qobj, GLU_OUTSIDE);
+		gluSphere(qobj, 1.5, 50, 50);
+		break;
+	case 3:
+		qobj = gluNewQuadric();
+		gluQuadricDrawStyle(qobj, GLU_LINE);
+		gluQuadricNormals(qobj, GLU_SMOOTH);
+		gluQuadricOrientation(qobj, GLU_OUTSIDE);
+		gluCylinder(qobj, 1.0,0.0,1.0,20,8);
+		break;
+	case 4:
+		qobj = gluNewQuadric();
+		gluQuadricDrawStyle(qobj, GLU_LINE);
+		gluQuadricNormals(qobj, GLU_SMOOTH);
+		gluQuadricOrientation(qobj, GLU_OUTSIDE);
+		gluCylinder(qobj, 1.0, 1.0, 2.0, 20, 8);
+		break;
+	default:
+		break;
+	}
+
+
+
+
 
 
 	glutSwapBuffers();
@@ -339,20 +478,21 @@ GLvoid TimerFunction1(int value)
 		yRotateAni += 0.5f;
 	if (rotateKey == 4)
 		yRotateAni -= 0.5f;
+	if (rotateKey == 5)
+		yRotateworld += 0.5f;
+	if (rotateKey == 6)
+		yRotateworld -= 0.5f;
 	glutTimerFunc(10, TimerFunction1, 1);
+}
+
+void change_obj() {
+	left_obj = rand_obj(eng);
+	right_obj = rand_obj(eng);
 }
 
 GLvoid Keyboard(unsigned char key, int x, int y)
 {
 	switch (key) {
-	case 'c':
-		isCube = true;
-		Set_VAO();
-		break;
-	case 'p':
-		isCube = false;
-		Set_VAO();
-		break;
 	case 'h':
 		isCulling = !isCulling;
 		break;
@@ -368,24 +508,27 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 'Y':
 		rotateKey = 4;
 		break;
+	case 'r':
+		rotateKey = 5;
+		break;
+	case 'R':
+		rotateKey = 6;
+		break;
 	case 'w':
 		isFill = !isFill;
 		break;
-	case 'j':
-		xMove -= 0.1;
-		break;
-	case 'l':
-		xMove += 0.1;
-		break;
-	case 'i':
-		yMove += 0.1;
-		break;
-	case 'k':
-		yMove -= 0.1;
-		break;
 	case 's':
 		rotateKey = 0;
-		xMove = 0.0, yMove = 0.0f, zMove = 0.0f;
+		left_obj = 0;
+		right_obj = 1;
+		isCulling = true;
+		isFill = true;
+		xRotateAni = 30.0f;
+		yRotateAni = -30.0f;
+		yRotateworld = -30.0f;
+		break;
+	case 'c':
+		change_obj();
 		break;
 	case 'q':
 		glutLeaveMainLoop();
@@ -424,12 +567,12 @@ int main(int argc, char** argv)
 		std::cout << "GLEW Initialized\n";
 
 	if (!Make_Shader_Program()) {
-		cerr << "Error: Shader Program »ý¼º ½ÇÆÐ" << endl;
+		cerr << "Error: Shader Program ìƒì„± ì‹¤íŒ¨" << endl;
 		std::exit(EXIT_FAILURE);
 	}
 
 	if (!Set_VAO()) {
-		cerr << "Error: VAO »ý¼º ½ÇÆÐ" << endl;
+		cerr << "Error: VAO ìƒì„± ì‹¤íŒ¨" << endl;
 		std::exit(EXIT_FAILURE);
 	}
 
