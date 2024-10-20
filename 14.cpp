@@ -1,4 +1,4 @@
-﻿#include <GL/glew.h>
+#include <GL/glew.h>
 #include <GL/freeglut.h>
 #include <GL/freeglut_ext.h>
 
@@ -10,24 +10,19 @@
 #include <random>
 #include <fstream>
 #include <iterator>
-#include <random>
 
 using namespace std;
-
-random_device seeder;
-const auto seed = seeder.entropy() ? seeder() : time(nullptr);
-mt19937 eng(static_cast<mt19937::result_type>(seed));
-uniform_int_distribution<int> rand_cube(0, 5);
-uniform_int_distribution<int> rand_tet(0, 3);
 
 const int WIN_X = 10, WIN_Y = 10;
 const int WIN_W = 800, WIN_H = 800;
 
-const glm::vec3 background_rgb = glm::vec3(0.0f, 0.0f, 0.0f);
+const glm::vec3 background_rgb = glm::vec3(1.0f, 1.0f, 1.0f);
 
 bool isCulling = true;
+bool isFill = true;
+double xMove = 0.0, yMove = 0.0, zMove = 0.0;
 float xRotateAni = 30.0f;
-float yRotateAni = 30.0f;
+float yRotateAni = -30.0f;
 int rotateKey = 0;
 
 GLfloat mx = 0.0f;
@@ -39,8 +34,6 @@ GLuint shaderProgramID;
 GLuint trianglePositionVertexBufferObjectID, triangleColorVertexBufferObjectID;
 GLuint trianglePositionElementBufferObject;
 GLuint Line_VAO, Line_VBO;
-
-vector<int> open_face = {0,1,2,3,4,5};
 
 std::vector< unsigned int > vertexIndices, uvIndices, normalIndices;
 
@@ -55,7 +48,7 @@ char* File_To_Buf(const char* file)
 	ifstream in(file, ios_base::binary);
 
 	if (!in) {
-		cerr << file << "파일 못찾음";
+		cerr << file << "���� ��ã��";
 		exit(1);
 	}
 
@@ -81,11 +74,10 @@ bool  Load_Object(const char* path) {
 
 	ifstream in(path);
 	if (!in) {
-		cerr << path << "파일 못찾음";
+		cerr << path << "���� ��ã��";
 		exit(1);
 	}
 
-	//vector<char> lineHeader(istream_iterator<char>{in}, {});
 
 	while (in) {
 		string lineHeader;
@@ -123,76 +115,58 @@ bool  Load_Object(const char* path) {
 }
 
 bool Make_Shader_Program() {
-	//세이더 코드 파일 불러오기
 	const GLchar* vertexShaderSource = File_To_Buf("vertex.glsl");
 	const GLchar* fragmentShaderSource = File_To_Buf("fragment.glsl");
 
-	//세이더 객체 만들기
 	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	//세이더 객체에 세이더 코드 붙이기
 	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-	//세이더 객체 컴파일하기
 	glCompileShader(vertexShader);
 
 	GLint result;
 	GLchar errorLog[512];
 
-	//세이더 상태 가져오기
 	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &result);
 	if (!result)
 	{
 		glGetShaderInfoLog(vertexShader, 512, NULL, errorLog);
-		cerr << "ERROR: vertex shader 컴파일 실패\n" << errorLog << endl;
+		cerr << "ERROR: vertex shader ������ ����\n" << errorLog << endl;
 		return false;
 	}
 
-	//세이더 객체 만들기
 	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	//세이더 객체에 세이더 코드 붙이기
 	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-	//세이더 객체 컴파일하기
 	glCompileShader(fragmentShader);
-	//세이더 상태 가져오기
 	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &result);
 	if (!result)
 	{
 		glGetShaderInfoLog(fragmentShader, 512, NULL, errorLog);
-		cerr << "ERROR: fragment shader 컴파일 실패\n" << errorLog << endl;
+		cerr << "ERROR: fragment shader ������ ����\n" << errorLog << endl;
 		return false;
 	}
 
-	//세이더 프로그램 생성
 	shaderProgramID = glCreateProgram();
-	//세이더 프로그램에 세이더 객체들을 붙이기
 	glAttachShader(shaderProgramID, vertexShader);
 	glAttachShader(shaderProgramID, fragmentShader);
-	//세이더 프로그램 링크
 	glLinkProgram(shaderProgramID);
 
-	//세이더 객체 삭제하기
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 
-	//프로그램 상태 가져오기
 	glGetProgramiv(shaderProgramID, GL_LINK_STATUS, &result);
 	if (!result) {
 		glGetProgramInfoLog(shaderProgramID, 512, NULL, errorLog);
-		cerr << "ERROR: shader program 연결 실패\n" << errorLog << endl;
+		cerr << "ERROR: shader program ���� ����\n" << errorLog << endl;
 		return false;
 	}
-	//세이더 프로그램 활성화
 	glUseProgram(shaderProgramID);
 
 	return true;
 }
 
 bool Set_VAO() {
-	//삼각형을 구성하는 vertex 데이터 - position과 color
-
 	isCube ? Load_Object("cube.obj") : Load_Object("tetrahedron.obj");
 
-
-	float color_cube[] = {
+	float color[] = {
 	   0.5f, 0.0f, 0.5f,//4
 	   0.0f, 0.0f, 1.0f,//0
 	   0.0f, 0.0f, 0.0f,//3
@@ -247,82 +221,46 @@ bool Set_VAO() {
 	   0.0f, 0.0f, 0.0f
 	};
 
-	float color_tetrahedron[] = {
-	   1.0f, 0.0f, 0.0f,//6
-	   0.0f, 1.0f, 0.0f,//2
-	   0.0f, 0.0f, 1.0f,//3
-
-	   1.0f, 0.5f, 0.5f,//0
-	   1.0f, 0.5f, 0.0f,//8
-	   1.0f, 0.0f, 0.5f,//1
-
-	   0.5f, 1.0f, 0.5f,//10
-	   0.5f, 1.0f, 0.0f,//9
-	   0.0f, 1.0f, 0.5f,//4
-
-	   0.5f, 0.5f, 1.0f,//5
-	   0.5f, 0.0f, 1.0f,//7
-	   0.0f, 0.5f, 1.0f,//11
-	};
-
 	glGenVertexArrays(1, &Line_VAO);
 	glBindVertexArray(Line_VAO);
 	glGenBuffers(1, &Line_VBO);
 
-	//버텍스 배열 오브젝트 (VAO) 이름 생성
 	glGenVertexArrays(1, &triangleVertexArrayObject);
-	//VAO를 바인드한다.
 	glBindVertexArray(triangleVertexArrayObject);
 
-	//Vertex Buffer Object(VBO)를 생성하여 vertex 데이터를 복사한다.
 
-	//버텍스 버퍼 오브젝트 (VBO) 이름 생성
 	glGenBuffers(1, &trianglePositionVertexBufferObjectID);
-	//버퍼 오브젝트를 바인드 한다.
 	glBindBuffer(GL_ARRAY_BUFFER, trianglePositionVertexBufferObjectID);
-	//버퍼 오브젝트의 데이터를 생성
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
 
-	//엘리멘트 버퍼 오브젝트 (EBO) 이름 생성
 	glGenBuffers(1, &trianglePositionElementBufferObject);
-	//버퍼 오브젝트를 바인드 한다.
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, trianglePositionElementBufferObject);
-	//버퍼 오브젝트의 데이터를 생성
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, vertexIndices.size() * sizeof(unsigned int), &vertexIndices[0], GL_STATIC_DRAW);
 
-	//위치 가져오기 함수
 	GLint positionAttribute = glGetAttribLocation(shaderProgramID, "positionAttribute");
 	if (positionAttribute == -1) {
-		cerr << "position 속성 설정 실패" << endl;
+		cerr << "position �Ӽ� ���� ����" << endl;
 		return false;
 	}
-	//버텍스 속성 데이터의 배열을 정의
 	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	//버텍스 속성 배열을 사용하도록 한다.
 	glEnableVertexAttribArray(positionAttribute);
 
-	//칼라 버퍼 오브젝트 (VBO) 이름 생성
 	glGenBuffers(1, &triangleColorVertexBufferObjectID);
-	//버퍼 오브젝트를 바인드 한다.
 	glBindBuffer(GL_ARRAY_BUFFER, triangleColorVertexBufferObjectID);
-	//버퍼 오브젝트의 데이터를 생성
-	isCube ? glBufferData(GL_ARRAY_BUFFER, sizeof(color_cube), color_cube, GL_STATIC_DRAW) : glBufferData(GL_ARRAY_BUFFER, sizeof(color_tetrahedron), color_tetrahedron, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(color), color, GL_STATIC_DRAW);
 
-	//위치 가져오기 함수
 	GLint colorAttribute = glGetAttribLocation(shaderProgramID, "colorAttribute");
 	if (colorAttribute == -1) {
-		cerr << "color 속성 설정 실패" << endl;
+		cerr << "color �Ӽ� ���� ����" << endl;
 		return false;
 	}
-	//버퍼 오브젝트를 바인드 한다.
 	glBindBuffer(GL_ARRAY_BUFFER, triangleColorVertexBufferObjectID);
-	//버텍스 속성 데이터의 배열을 정의
 	glVertexAttribPointer(colorAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	//버텍스 속성 배열을 사용하도록 한다.
 	glEnableVertexAttribArray(colorAttribute);
 
 
 	glBindVertexArray(0);
+
 
 	return true;
 }
@@ -340,37 +278,18 @@ GLvoid drawScene()
 		0.0f, 10.0f, 0.0f, 0.0f,1.0f,0.0f
 	};
 
+
 	isCulling ? glEnable(GL_DEPTH_TEST) : glDisable(GL_DEPTH_TEST);
 	isCulling ? glEnable(GL_CULL_FACE) : glDisable(GL_CULL_FACE);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	isFill ? glPolygonMode(GL_FRONT_AND_BACK, GL_FILL) : glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	glUseProgram(shaderProgramID);
 
-	glm::mat4 TR = glm::mat4(1.0f);
-	TR = glm::rotate(TR, glm::radians(xRotateAni), glm::vec3(1.0, 0.0, 0.0));
-	TR = glm::rotate(TR, glm::radians(yRotateAni), glm::vec3(0.0, 1.0, 0.0));
+	glBindVertexArray(Line_VAO);
 
+	glm::mat4 TR = glm::mat4(1.0f);
 	unsigned int modelLocation = glGetUniformLocation(shaderProgramID, "transform");
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
-
-	glBindVertexArray(triangleVertexArrayObject);
-
-	if (isCube)
-	{
-		for (int i = 0; i < open_face.size(); i++)
-		{
-			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * 6 * open_face[i]));
-		}
-	}
-	else
-	{
-		for (int i = 0; i < open_face.size(); i++)
-		{
-			glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * 3 * open_face[i]));
-		}
-	}
-
-	glBindVertexArray(Line_VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, Line_VBO);
 	glBufferData(GL_ARRAY_BUFFER, line.size() * sizeof(float), line.data(), GL_STATIC_DRAW);
@@ -380,6 +299,18 @@ GLvoid drawScene()
 	glEnableVertexAttribArray(1);
 
 	glDrawArrays(GL_LINES, 0, line.size() / 3);
+
+	TR = glm::mat4(1.0f);
+	TR = glm::translate(TR, glm::vec3(xMove, yMove, zMove));
+	TR = glm::rotate(TR, glm::radians(xRotateAni), glm::vec3(1.0, 0.0, 0.0));
+	TR = glm::rotate(TR, glm::radians(yRotateAni), glm::vec3(0.0, 1.0, 0.0));
+	modelLocation = glGetUniformLocation(shaderProgramID, "transform");
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
+
+	glBindVertexArray(triangleVertexArrayObject);
+
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
 
 	glutSwapBuffers();
 }
@@ -403,102 +334,19 @@ GLvoid TimerFunction1(int value)
 	glutTimerFunc(10, TimerFunction1, 1);
 }
 
-void set_openface(vector<int> index) {
-	open_face.clear();
-	for (int i = 0; i < index.size(); i++)
-	{
-		open_face.push_back(index[i]);
-	}
-}
-
 GLvoid Keyboard(unsigned char key, int x, int y)
 {
-	vector<int> new_opnenface = {};
 	switch (key) {
-	case '1':
-		new_opnenface.push_back(0);
-		set_openface(new_opnenface);
-		isCube = true;
-		Set_VAO();
-		break;
-	case '2':
-		new_opnenface.push_back(1);
-		set_openface(new_opnenface);
-		isCube = true;
-		Set_VAO();
-		break;
-	case '3':
-		new_opnenface.push_back(2);
-		set_openface(new_opnenface);
-		isCube = true;
-		Set_VAO();
-		break;
-	case '4':
-		new_opnenface.push_back(3);
-		set_openface(new_opnenface);
-		isCube = true;
-		Set_VAO();
-		break;
-	case '5':
-		new_opnenface.push_back(4);
-		set_openface(new_opnenface);
-		isCube = true;
-		Set_VAO();
-		break;
-	case '6':
-		new_opnenface.push_back(5);
-		set_openface(new_opnenface);
-		isCube = true;
-		Set_VAO();
-		break;
-	case '7':
-		new_opnenface.push_back(0);
-		set_openface(new_opnenface);
-		isCube = false;
-		Set_VAO();
-		break;
-	case '8':
-		new_opnenface.push_back(1);
-		set_openface(new_opnenface);
-		isCube = false;
-		Set_VAO();
-		break;
-	case '9':
-		new_opnenface.push_back(2);
-		set_openface(new_opnenface);
-		isCube = false;
-		Set_VAO();
-		break;
-	case '0':
-		new_opnenface.push_back(3);
-		set_openface(new_opnenface);
-		isCube = false;
-		Set_VAO();
-		break;
 	case 'c':
-		new_opnenface.push_back(rand_cube(eng));
-		new_opnenface.push_back(rand_cube(eng));
-		while(new_opnenface[0] == new_opnenface[1])
-			new_opnenface[1] = rand_cube(eng);
-		set_openface(new_opnenface);
 		isCube = true;
-		Set_VAO();
-		break;
-	case 't':
-		new_opnenface.push_back(rand_tet(eng));
-		new_opnenface.push_back(rand_tet(eng));
-		while (new_opnenface[0] == new_opnenface[1])
-			new_opnenface[1] = rand_tet(eng);
-		set_openface(new_opnenface);
-		isCube = false;
 		Set_VAO();
 		break;
 	case 'p':
-		isCube = !isCube;
+		isCube = false;
 		Set_VAO();
 		break;
 	case 'h':
-		isCulling = 1 - isCulling;
+		isCulling = !isCulling;
 		break;
 	case 'x':
 		rotateKey = 1;
@@ -512,8 +360,24 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 'Y':
 		rotateKey = 4;
 		break;
+	case 'w':
+		isFill = !isFill;
+		break;
+	case 'j':
+		xMove -= 0.1;
+		break;
+	case 'l':
+		xMove += 0.1;
+		break;
+	case 'i':
+		yMove += 0.1;
+		break;
+	case 'k':
+		yMove -= 0.1;
+		break;
 	case 's':
 		rotateKey = 0;
+		xMove = 0.0, yMove = 0.0f, zMove = 0.0f;
 		break;
 	case 'q':
 		glutLeaveMainLoop();
@@ -536,14 +400,12 @@ void Mouse(int button, int state, int x, int y)
 
 int main(int argc, char** argv)
 {
-	//윈도우 생성
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(WIN_X, WIN_Y);
 	glutInitWindowSize(WIN_W, WIN_H);
 	glutCreateWindow("Example1");
 
-	//GLEW 초기화하기
 	glewExperimental = GL_TRUE;
 	if (glewInit() != GLEW_OK)
 	{
@@ -554,19 +416,20 @@ int main(int argc, char** argv)
 		std::cout << "GLEW Initialized\n";
 
 	if (!Make_Shader_Program()) {
-		cerr << "Error: Shader Program 생성 실패" << endl;
+		cerr << "Error: Shader Program ���� ����" << endl;
 		std::exit(EXIT_FAILURE);
 	}
 
 	if (!Set_VAO()) {
-		cerr << "Error: VAO 생성 실패" << endl;
+		cerr << "Error: VAO ���� ����" << endl;
 		std::exit(EXIT_FAILURE);
 	}
-	glutTimerFunc(10, TimerFunction1, 1);
 
+	glutTimerFunc(10, TimerFunction1, 1);
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
 	glutKeyboardFunc(Keyboard);
 	glutMouseFunc(Mouse);
 	glutMainLoop();
+
 }
