@@ -28,10 +28,26 @@ bool isFill = true;
 float xRotateAni = 30.0f;
 float yRotateAni = -30.0f;
 float yRotateworld = -30.0f;
+glm::vec3 scale_personal_left = { 0.25f,0.25f,0.25f };
+glm::vec3 scale_personal_right = { 0.25f,0.25f,0.25f };
+glm::vec3 scale_world_left = { 1.0f,1.0f,1.0f };
+glm::vec3 scale_world_right = { 1.0f,1.0f,1.0f };
+
+glm::vec3 translate_left = { -0.5f,0.0f,0.0f };
+glm::vec3 translate_right = { 0.5f,0.0f,0.0f };
+
+int translateKey = 0;
+int selected = 0;
 int rotateKey = 0;
 
 GLfloat mx = 0.0f;
 GLfloat my = 0.0f;
+
+int animationKey = 0;
+std::vector<float> spiral = { 0.0f,0.0f,0.0f,0.0f,0.5f,0.5f };
+float seta = 0.0f;
+float radius = 0.05f;
+
 
 int framebufferWidth, framebufferHeight;
 GLuint triangleVertexArrayObject;
@@ -39,6 +55,7 @@ GLuint shaderProgramID;
 GLuint trianglePositionVertexBufferObjectID, triangleColorVertexBufferObjectID;
 GLuint trianglePositionElementBufferObject;
 GLuint Line_VAO, Line_VBO;
+GLuint spiral_VAO, spiral_VBO;
 
 GLuint triangleVertexArrayObject_2;
 GLuint trianglePositionVertexBufferObjectID_2, triangleColorVertexBufferObjectID_2;
@@ -237,6 +254,10 @@ bool Set_VAO() {
 	glBindVertexArray(Line_VAO);
 	glGenBuffers(1, &Line_VBO);
 
+	glGenVertexArrays(1, &spiral_VAO);
+	glBindVertexArray(spiral_VAO);
+	glGenBuffers(1, &spiral_VBO);
+
 	glGenVertexArrays(1, &triangleVertexArrayObject);
 	glBindVertexArray(triangleVertexArrayObject);
 
@@ -336,6 +357,9 @@ GLvoid drawScene()
 
 	glUseProgram(shaderProgramID);
 
+
+	//좌표축
+
 	glBindVertexArray(Line_VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, Line_VBO);
@@ -352,15 +376,31 @@ GLvoid drawScene()
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
 	glDrawArrays(GL_LINES, 0, line.size() / 3);
 
+	//스파이럴
+
+	glBindVertexArray(spiral_VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, spiral_VBO);
+	glBufferData(GL_ARRAY_BUFFER, spiral.size() * sizeof(float), spiral.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+
+	glDrawArrays(GL_LINES, 0, spiral.size() / 3);
+
+
+
 	//오른쪽 도형
 
 	TR = glm::mat4(1.0f);
 	TR = glm::rotate(TR, glm::radians(30.0f), glm::vec3(1.0, 0.0, 0.0));
 	TR = glm::rotate(TR, glm::radians(yRotateworld), glm::vec3(0.0, 1.0, 0.0));
-	TR = glm::translate(TR, glm::vec3(0.5, 0.0, 0.0));
+	TR = glm::scale(TR, scale_world_right);
+	TR = glm::translate(TR, translate_right);
 	TR = glm::rotate(TR, glm::radians(xRotateAni), glm::vec3(1.0, 0.0, 0.0));
 	TR = glm::rotate(TR, glm::radians(yRotateAni), glm::vec3(0.0, 1.0, 0.0));
-	TR = glm::scale(TR, glm::vec3(0.25, 0.25, 0.25));
+	TR = glm::scale(TR, scale_personal_right);
 	modelLocation = glGetUniformLocation(shaderProgramID, "transform");
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
 
@@ -412,10 +452,11 @@ GLvoid drawScene()
 	TR = glm::mat4(1.0f);
 	TR = glm::rotate(TR, glm::radians(30.0f), glm::vec3(1.0, 0.0, 0.0));
 	TR = glm::rotate(TR, glm::radians(yRotateworld), glm::vec3(0.0, 1.0, 0.0));
-	TR = glm::translate(TR, glm::vec3(-0.5, 0.0, 0.0));
+	TR = glm::scale(TR, scale_world_left);
+	TR = glm::translate(TR, translate_left);
 	TR = glm::rotate(TR, glm::radians(xRotateAni), glm::vec3(1.0, 0.0, 0.0));
 	TR = glm::rotate(TR, glm::radians(yRotateAni), glm::vec3(0.0, 1.0, 0.0));
-	TR = glm::scale(TR, glm::vec3(0.25, 0.25, 0.25));
+	TR = glm::scale(TR, scale_personal_left);
 	modelLocation = glGetUniformLocation(shaderProgramID, "transform");
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
 
@@ -454,11 +495,6 @@ GLvoid drawScene()
 		break;
 	}
 
-
-
-
-
-
 	glutSwapBuffers();
 }
 
@@ -482,6 +518,64 @@ GLvoid TimerFunction1(int value)
 		yRotateworld += 0.5f;
 	if (rotateKey == 6)
 		yRotateworld -= 0.5f;
+
+	switch (translateKey)
+	{
+	case 1:
+		translate_left.x += 0.01;
+		translate_right.x += 0.01;
+		break;
+	case 2:
+		translate_left.x -= 0.01;
+		translate_right.x -= 0.01;
+		break;
+	case 3:
+		translate_left.y += 0.01;
+		translate_right.y += 0.01;
+		break;
+	case 4:
+		translate_left.y -= 0.01;
+		translate_right.y -= 0.01;
+		break;
+	case 5:
+		translate_left.z += 0.01;
+		translate_right.z += 0.01;
+		break;
+	case 6:
+		translate_left.z -= 0.01;
+		translate_right.z -= 0.01;
+		break;
+	default:
+		break;
+	}
+
+	std::vector<float> newspiralpoint = {
+		spiral[spiral.size() - 6],
+		spiral[spiral.size() - 5],
+		spiral[spiral.size() - 4],
+		spiral[spiral.size() - 3],
+		spiral[spiral.size() - 2],
+		spiral[spiral.size() - 1],
+	};
+
+	switch (animationKey)
+	{
+	case 1: //스파이럴
+		newspiralpoint[0] = spiral[0] + (glm::radians(cos(seta)) * radius);
+		newspiralpoint[1] = spiral[0] + (glm::radians(sin(seta)) * radius);
+		break;
+	case 2:
+		break;
+	case 3:
+		break;
+	case 4:
+		break;
+	case 5:
+		break;
+	default:
+		break;
+	}
+
 	glutTimerFunc(10, TimerFunction1, 1);
 }
 
@@ -493,6 +587,12 @@ void change_obj() {
 GLvoid Keyboard(unsigned char key, int x, int y)
 {
 	switch (key) {
+	case '1':
+		selected = 1;
+		break;
+	case '2':
+		selected = 2;
+		break;
 	case 'h':
 		isCulling = !isCulling;
 		break;
@@ -514,18 +614,101 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 'R':
 		rotateKey = 6;
 		break;
+	case 'p':
+		if (selected == 1)
+		{
+			scale_personal_left.x += 0.1f;
+			scale_personal_left.y += 0.1f;
+			scale_personal_left.z += 0.1f;
+		}
+		else if (selected == 2)
+		{
+			scale_personal_right.x += 0.1f;
+			scale_personal_right.y += 0.1f;
+			scale_personal_right.z += 0.1f;
+		}
+		break;
+	case 'P':
+		if (selected == 1)
+		{
+			scale_personal_left.x -= 0.1f;
+			scale_personal_left.y -= 0.1f;
+			scale_personal_left.z -= 0.1f;
+		}
+		else if (selected == 2)
+		{
+			scale_personal_right.x -= 0.1f;
+			scale_personal_right.y -= 0.1f;
+			scale_personal_right.z -= 0.1f;
+		}
+		break;
 	case 'w':
+		if (selected == 1)
+		{
+			scale_world_left.x += 0.1f;
+			scale_world_left.y += 0.1f;
+			scale_world_left.z += 0.1f;
+		}
+		else if (selected == 2)
+		{
+			scale_world_right.x += 0.1f;
+			scale_world_right.y += 0.1f;
+			scale_world_right.z += 0.1f;
+		}
+		break;
+	case 'W':
+		if (selected == 1)
+		{
+			scale_world_left.x -= 0.1f;
+			scale_world_left.y -= 0.1f;
+			scale_world_left.z -= 0.1f;
+		}
+		else if (selected == 2)
+		{
+			scale_world_right.x -= 0.1f;
+			scale_world_right.y -= 0.1f;
+			scale_world_right.z -= 0.1f;
+		}
+		break;
+	case 'j':
+		translateKey = 1;
+		break;
+	case 'J':
+		translateKey = 2;
+		break;
+	case 'k':
+		translateKey = 3;
+		break;
+	case 'K':
+		translateKey = 4;
+		break;
+	case 'l':
+		translateKey = 5;
+		break;
+	case 'L':
+		translateKey = 6;
+		break;
+	case 'v': //애니메이션 1
+		animationKey = 1;
+		break;
+	case 'b': //2
+		animationKey = 2;
+		break;
+	case 'n': //3
+		animationKey = 3;
+		break;
+	case 'm': //4
+		animationKey = 4;
+		break;
+	case ',': //5
+		animationKey = 5;
+		break;
+	case 'f':
 		isFill = !isFill;
 		break;
 	case 's':
 		rotateKey = 0;
-		left_obj = 0;
-		right_obj = 1;
-		isCulling = true;
-		isFill = true;
-		xRotateAni = 30.0f;
-		yRotateAni = -30.0f;
-		yRotateworld = -30.0f;
+		translateKey = 0;
 		break;
 	case 'c':
 		change_obj();
