@@ -1,4 +1,4 @@
-ï»¿#include <GL/glew.h>
+#include <GL/glew.h>
 #include <GL/freeglut.h>
 #include <GL/freeglut_ext.h>
 
@@ -60,7 +60,7 @@ char* File_To_Buf(const char* file)
 	ifstream in(file, ios_base::binary);
 
 	if (!in) {
-		cerr << file << "íŒŒì¼ ëª»ì°¾ìŒ";
+		cerr << file << "ÆÄÀÏ ¸øÃ£À½";
 		exit(1);
 	}
 
@@ -86,7 +86,7 @@ bool  Load_Object(const char* path) {
 
 	ifstream in(path);
 	if (!in) {
-		cerr << path << "íŒŒì¼ ëª»ì°¾ìŒ";
+		cerr << path << "ÆÄÀÏ ¸øÃ£À½";
 		exit(1);
 	}
 
@@ -141,7 +141,7 @@ bool Make_Shader_Program() {
 	if (!result)
 	{
 		glGetShaderInfoLog(vertexShader, 512, NULL, errorLog);
-		cerr << "ERROR: vertex shader ì»´íŒŒì¼ ì‹¤íŒ¨\n" << errorLog << endl;
+		cerr << "ERROR: vertex shader ÄÄÆÄÀÏ ½ÇÆÐ\n" << errorLog << endl;
 		return false;
 	}
 
@@ -152,7 +152,7 @@ bool Make_Shader_Program() {
 	if (!result)
 	{
 		glGetShaderInfoLog(fragmentShader, 512, NULL, errorLog);
-		cerr << "ERROR: fragment shader ì»´íŒŒì¼ ì‹¤íŒ¨\n" << errorLog << endl;
+		cerr << "ERROR: fragment shader ÄÄÆÄÀÏ ½ÇÆÐ\n" << errorLog << endl;
 		return false;
 	}
 
@@ -167,7 +167,7 @@ bool Make_Shader_Program() {
 	glGetProgramiv(shaderProgramID, GL_LINK_STATUS, &result);
 	if (!result) {
 		glGetProgramInfoLog(shaderProgramID, 512, NULL, errorLog);
-		cerr << "ERROR: shader program ì—°ê²° ì‹¤íŒ¨\n" << errorLog << endl;
+		cerr << "ERROR: shader program ¿¬°á ½ÇÆÐ\n" << errorLog << endl;
 		return false;
 	}
 	glUseProgram(shaderProgramID);
@@ -251,7 +251,7 @@ bool Set_VAO() {
 
 	GLint positionAttribute = glGetAttribLocation(shaderProgramID, "positionAttribute");
 	if (positionAttribute == -1) {
-		cerr << "position ì†ì„± ì„¤ì • ì‹¤íŒ¨" << endl;
+		cerr << "position ¼Ó¼º ¼³Á¤ ½ÇÆÐ" << endl;
 		return false;
 	}
 	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -263,7 +263,7 @@ bool Set_VAO() {
 
 	GLint colorAttribute = glGetAttribLocation(shaderProgramID, "colorAttribute");
 	if (colorAttribute == -1) {
-		cerr << "color ì†ì„± ì„¤ì • ì‹¤íŒ¨" << endl;
+		cerr << "color ¼Ó¼º ¼³Á¤ ½ÇÆÐ" << endl;
 		return false;
 	}
 	glBindBuffer(GL_ARRAY_BUFFER, triangleColorVertexBufferObjectID);
@@ -288,7 +288,7 @@ bool Set_VAO() {
 
 	//positionAttribute = glGetAttribLocation(shaderProgramID, "positionAttribute");
 	//if (positionAttribute == -1) {
-	//	cerr << "position ì†ì„± ì„¤ì • ì‹¤íŒ¨" << endl;
+	//	cerr << "position ¼Ó¼º ¼³Á¤ ½ÇÆÐ" << endl;
 	//	return false;
 	//}
 	//glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -300,7 +300,7 @@ bool Set_VAO() {
 
 	//colorAttribute = glGetAttribLocation(shaderProgramID, "colorAttribute");
 	//if (colorAttribute == -1) {
-	//	cerr << "color ì†ì„± ì„¤ì • ì‹¤íŒ¨" << endl;
+	//	cerr << "color ¼Ó¼º ¼³Á¤ ½ÇÆÐ" << endl;
 	//	return false;
 	//}
 	//glBindBuffer(GL_ARRAY_BUFFER, triangleColorVertexBufferObjectID_2);
@@ -352,7 +352,7 @@ GLvoid drawScene()
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
 	glDrawArrays(GL_LINES, 0, line.size() / 3);
 
-	//ì˜¤ë¥¸ìª½ ë„í˜•
+	//¿À¸¥ÂÊ µµÇü
 
 	TR = glm::mat4(1.0f);
 	TR = glm::rotate(TR, glm::radians(30.0f), glm::vec3(1.0, 0.0, 0.0));
@@ -407,7 +407,7 @@ GLvoid drawScene()
 
 
 
-	//ì™¼ìª½ ë„í˜•
+	//¿ÞÂÊ µµÇü
 
 	TR = glm::mat4(1.0f);
 	TR = glm::rotate(TR, glm::radians(30.0f), glm::vec3(1.0, 0.0, 0.0));
@@ -441,7 +441,7 @@ GLvoid drawScene()
 		gluQuadricDrawStyle(qobj, GLU_LINE);
 		gluQuadricNormals(qobj, GLU_SMOOTH);
 		gluQuadricOrientation(qobj, GLU_OUTSIDE);
-		gluCylinder(qobj, 1.0,0.0,1.0,20,8);
+		gluCylinder(qobj, 1.0, 0.0, 1.0, 20, 8);
 		break;
 	case 4:
 		qobj = gluNewQuadric();
@@ -567,12 +567,12 @@ int main(int argc, char** argv)
 		std::cout << "GLEW Initialized\n";
 
 	if (!Make_Shader_Program()) {
-		cerr << "Error: Shader Program ìƒì„± ì‹¤íŒ¨" << endl;
+		cerr << "Error: Shader Program »ý¼º ½ÇÆÐ" << endl;
 		std::exit(EXIT_FAILURE);
 	}
 
 	if (!Set_VAO()) {
-		cerr << "Error: VAO ìƒì„± ì‹¤íŒ¨" << endl;
+		cerr << "Error: VAO »ý¼º ½ÇÆÐ" << endl;
 		std::exit(EXIT_FAILURE);
 	}
 
