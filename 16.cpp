@@ -28,17 +28,24 @@ bool isFill = true;
 float xRotateAni = 30.0f;
 float yRotateAni = -30.0f;
 float yRotateworld = -30.0f;
-glm::vec3 scale_personal_left = { 0.25f,0.25f,0.25f };
-glm::vec3 scale_personal_right = { 0.25f,0.25f,0.25f };
+glm::vec3 scale_personal_left = { 0.1f,0.1f,0.1f };
+glm::vec3 scale_personal_right = { 0.1f,0.1f,0.1f };
 glm::vec3 scale_world_left = { 1.0f,1.0f,1.0f };
 glm::vec3 scale_world_right = { 1.0f,1.0f,1.0f };
+
+glm::vec3 left_start = { 1.0f,1.0f,1.0f};
+glm::vec3 right_start = { 1.0f,1.0f,1.0f};
 
 glm::vec3 translate_left = { -0.5f,0.0f,0.0f };
 glm::vec3 translate_right = { 0.5f,0.0f,0.0f };
 
-int translateKey = 0;
+int spiral_left = 0;
+int spiral_right = 0;
+
 int selected = 0;
 int rotateKey = 0;
+
+bool anim5 = 0;
 
 GLfloat mx = 0.0f;
 GLfloat my = 0.0f;
@@ -48,6 +55,7 @@ std::vector<float> spiral = { 0.0f,0.0f,0.0f,0.0f,0.5f,0.5f };
 float seta = 0.0f;
 float radius = 0.05f;
 
+float t = 0;
 
 int framebufferWidth, framebufferHeight;
 GLuint triangleVertexArrayObject;
@@ -293,42 +301,42 @@ bool Set_VAO() {
 
 	glBindVertexArray(0);
 
-	//Load_Object("tetrahedron.obj");
+	Load_Object("tetrahedron.obj");
 
-	//glGenVertexArrays(1, &triangleVertexArrayObject_2);
-	//glBindVertexArray(triangleVertexArrayObject_2);
+	glGenVertexArrays(1, &triangleVertexArrayObject_2);
+	glBindVertexArray(triangleVertexArrayObject_2);
 
 
-	//glGenBuffers(1, &trianglePositionVertexBufferObjectID_2);
-	//glBindBuffer(GL_ARRAY_BUFFER, trianglePositionVertexBufferObjectID_2);
-	//glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+	glGenBuffers(1, &trianglePositionVertexBufferObjectID_2);
+	glBindBuffer(GL_ARRAY_BUFFER, trianglePositionVertexBufferObjectID_2);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
 
-	//glGenBuffers(1, &trianglePositionElementBufferObject_2);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, trianglePositionElementBufferObject_2);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, vertexIndices.size() * sizeof(unsigned int), &vertexIndices[0], GL_STATIC_DRAW);
+	glGenBuffers(1, &trianglePositionElementBufferObject_2);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, trianglePositionElementBufferObject_2);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, vertexIndices.size() * sizeof(unsigned int), &vertexIndices[0], GL_STATIC_DRAW);
 
-	//positionAttribute = glGetAttribLocation(shaderProgramID, "positionAttribute");
-	//if (positionAttribute == -1) {
-	//	cerr << "position 속성 설정 실패" << endl;
-	//	return false;
-	//}
-	//glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	//glEnableVertexAttribArray(positionAttribute);
+	positionAttribute = glGetAttribLocation(shaderProgramID, "positionAttribute");
+	if (positionAttribute == -1) {
+		cerr << "position 속성 설정 실패" << endl;
+		return false;
+	}
+	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(positionAttribute);
 
-	//glGenBuffers(1, &triangleColorVertexBufferObjectID_2);
-	//glBindBuffer(GL_ARRAY_BUFFER, triangleColorVertexBufferObjectID_2);
-	//glBufferData(GL_ARRAY_BUFFER, sizeof(color), color, GL_STATIC_DRAW);
+	glGenBuffers(1, &triangleColorVertexBufferObjectID_2);
+	glBindBuffer(GL_ARRAY_BUFFER, triangleColorVertexBufferObjectID_2);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(color), color, GL_STATIC_DRAW);
 
-	//colorAttribute = glGetAttribLocation(shaderProgramID, "colorAttribute");
-	//if (colorAttribute == -1) {
-	//	cerr << "color 속성 설정 실패" << endl;
-	//	return false;
-	//}
-	//glBindBuffer(GL_ARRAY_BUFFER, triangleColorVertexBufferObjectID_2);
-	//glVertexAttribPointer(colorAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	//glEnableVertexAttribArray(colorAttribute);
+	colorAttribute = glGetAttribLocation(shaderProgramID, "colorAttribute");
+	if (colorAttribute == -1) {
+		cerr << "color 속성 설정 실패" << endl;
+		return false;
+	}
+	glBindBuffer(GL_ARRAY_BUFFER, triangleColorVertexBufferObjectID_2);
+	glVertexAttribPointer(colorAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(colorAttribute);
 
-	//glBindVertexArray(0);
+	glBindVertexArray(0);
 
 
 	return true;
@@ -359,7 +367,6 @@ GLvoid drawScene()
 
 
 	//좌표축
-
 	glBindVertexArray(Line_VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, Line_VBO);
@@ -376,8 +383,8 @@ GLvoid drawScene()
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
 	glDrawArrays(GL_LINES, 0, line.size() / 3);
 
-	//스파이럴
 
+	//스파이럴
 	glBindVertexArray(spiral_VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, spiral_VBO);
@@ -387,12 +394,10 @@ GLvoid drawScene()
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 
-	glDrawArrays(GL_LINES, 0, spiral.size() / 3);
-
+	glDrawArrays(GL_LINE_STRIP, 0, spiral.size() / 6);
 
 
 	//오른쪽 도형
-
 	TR = glm::mat4(1.0f);
 	TR = glm::rotate(TR, glm::radians(30.0f), glm::vec3(1.0, 0.0, 0.0));
 	TR = glm::rotate(TR, glm::radians(yRotateworld), glm::vec3(0.0, 1.0, 0.0));
@@ -411,8 +416,8 @@ GLvoid drawScene()
 		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 		break;
 	case 1:
-		/*glBindVertexArray(triangleVertexArrayObject_2);
-		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);*/
+		glBindVertexArray(triangleVertexArrayObject_2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 		break;
 	case 2:
 		qobj = gluNewQuadric();
@@ -439,14 +444,6 @@ GLvoid drawScene()
 		break;
 	}
 
-
-
-
-
-
-
-
-
 	//왼쪽 도형
 
 	TR = glm::mat4(1.0f);
@@ -467,8 +464,8 @@ GLvoid drawScene()
 		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 		break;
 	case 1:
-		/*glBindVertexArray(triangleVertexArrayObject_2);
-		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);*/
+		glBindVertexArray(triangleVertexArrayObject_2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 		break;
 	case 2:
 		qobj = gluNewQuadric();
@@ -519,36 +516,6 @@ GLvoid TimerFunction1(int value)
 	if (rotateKey == 6)
 		yRotateworld -= 0.5f;
 
-	switch (translateKey)
-	{
-	case 1:
-		translate_left.x += 0.01;
-		translate_right.x += 0.01;
-		break;
-	case 2:
-		translate_left.x -= 0.01;
-		translate_right.x -= 0.01;
-		break;
-	case 3:
-		translate_left.y += 0.01;
-		translate_right.y += 0.01;
-		break;
-	case 4:
-		translate_left.y -= 0.01;
-		translate_right.y -= 0.01;
-		break;
-	case 5:
-		translate_left.z += 0.01;
-		translate_right.z += 0.01;
-		break;
-	case 6:
-		translate_left.z -= 0.01;
-		translate_right.z -= 0.01;
-		break;
-	default:
-		break;
-	}
-
 	std::vector<float> newspiralpoint = {
 		spiral[spiral.size() - 6],
 		spiral[spiral.size() - 5],
@@ -561,16 +528,118 @@ GLvoid TimerFunction1(int value)
 	switch (animationKey)
 	{
 	case 1: //스파이럴
-		newspiralpoint[0] = spiral[0] + (glm::radians(cos(seta)) * radius);
-		newspiralpoint[1] = spiral[0] + (glm::radians(sin(seta)) * radius);
+		if (radius < 75)
+		{
+			newspiralpoint[0] = spiral[0] + (glm::radians(cos(seta)) * radius);
+			newspiralpoint[2] = spiral[2] + (glm::radians(sin(seta)) * radius);
+
+			for (int i = 0; i < 6; i++)
+			{
+				spiral.push_back(newspiralpoint[i]);
+			}
+			seta -= 0.1f;
+			radius += 0.1f;
+
+			spiral_left++;
+		}
+
+		if (radius >= 75)
+		{
+			if (spiral_left > 0)
+			{
+				translate_left.x = spiral[spiral_left * 6];
+				translate_left.y = 0.0f;
+				translate_left.z = spiral[(spiral_left * 6) + 2];
+				spiral_left--;
+			}
+
+			if (spiral_right * 6 < (spiral.size() - 6))
+			{
+				translate_right.x = spiral[spiral_right * 6];
+				translate_right.y = 0.0f;
+				translate_right.z = spiral[spiral_right * 6 + 2];
+				spiral_right++;
+			}
+		}
 		break;
 	case 2:
+		translate_left = glm::vec3(1 - t, 1 - t, 1 - t) * left_start + glm::vec3(t, t, t) * right_start;
+		translate_right = glm::vec3(1 - t, 1 - t, 1 - t) * right_start + glm::vec3(t, t, t) * left_start;
+		t += 0.01f;
+		if (t >= 1)
+		{
+			animationKey = 0;
+			translate_left = right_start;
+			translate_right = left_start;
+		}
 		break;
 	case 3:
+		translate_left = glm::vec3((1 - t)* (1 - t), (1 - t) * (1 - t), (1 - t) * (1 - t)) * left_start +
+			glm::vec3((1 - t) * t, (1 - t) * t, (1 - t) * t) * (((left_start + right_start) / glm::vec3(2, 2, 2)) + glm::vec3(2, 2, 2)) +
+			glm::vec3(t*t, t * t, t * t) * right_start;
+		translate_right = glm::vec3((1 - t) * (1 - t), (1 - t) * (1 - t), (1 - t) * (1 - t)) * right_start +
+			glm::vec3((1 - t) * t, (1 - t) * t, (1 - t) * t) * (((left_start + right_start) / glm::vec3(2, 2, 2)) + glm::vec3(-2, -2, -2)) +
+			glm::vec3(t * t, t * t, t * t) * left_start;
+		t += 0.01f;
+		if (t >= 1)
+		{
+			animationKey = 0;
+			translate_left = right_start;
+			translate_right = left_start;
+		}
 		break;
 	case 4:
+		if (t < 1)
+		{
+			translate_left.x = (1 - t) * left_start.x + (t)*right_start.x;
+			translate_right.x = (1 - t) * right_start.x + (t)*left_start.x;
+			t += 0.01f;
+		}
+		else if (t < 2)
+		{
+			translate_left.x = right_start.x;
+			translate_right.x = left_start.x;
+			translate_left.y = (1 - (t - 1)) * left_start.y + (t - 1) * right_start.y;
+			translate_right.y = (1 - (t - 1)) * right_start.y + (t - 1) * left_start.y;
+			t += 0.01f;
+		}
+		else if (t < 3)
+		{
+			translate_left.y = right_start.y;
+			translate_right.y = left_start.y;
+			translate_left.z = (1 - (t - 2)) * left_start.z + (t - 2) * right_start.z;
+			translate_right.z = (1 - (t - 2)) * right_start.z + (t - 2) * left_start.z;
+			t += 0.01f;
+		}
+		else
+		{
+			animationKey = 0;
+			translate_left = right_start;
+			translate_right = left_start;
+		}
 		break;
 	case 5:
+		if (anim5)
+		{
+			scale_personal_left += glm::vec3(0.001f, 0.001f, 0.001f);
+			scale_personal_right -= glm::vec3(0.001f, 0.001f, 0.001f);
+			if (scale_personal_right.x < 0.0f)
+			{
+				anim5 = !anim5;
+			}
+		}
+		else
+		{
+			scale_personal_left -= glm::vec3(0.001f, 0.001f, 0.001f);
+			scale_personal_right += glm::vec3(0.001f, 0.001f, 0.001f);
+			if (scale_personal_left.x < 0.0f)
+			{
+				anim5 = !anim5;
+			}
+		}
+		xRotateAni += 0.5f;
+		yRotateAni += 0.5f;
+		yRotateworld += 0.5f;
 		break;
 	default:
 		break;
@@ -671,33 +740,84 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		}
 		break;
 	case 'j':
-		translateKey = 1;
+		if (selected == 1)
+		{
+			translate_left.x += 0.1f;
+		}
+		else if (selected == 2)
+		{
+			translate_right.x += 0.1f;
+		}
 		break;
 	case 'J':
-		translateKey = 2;
+		if (selected == 1)
+		{
+			translate_left.x -= 0.1f;
+		}
+		else if (selected == 2)
+		{
+			translate_right.x -= 0.1f;
+		}
 		break;
 	case 'k':
-		translateKey = 3;
+		if (selected == 1)
+		{
+			translate_left.y += 0.1f;
+		}
+		else if (selected == 2)
+		{
+			translate_right.y += 0.1f;
+		}
 		break;
 	case 'K':
-		translateKey = 4;
+		if (selected == 1)
+		{
+			translate_left.y -= 0.1f;
+		}
+		else if (selected == 2)
+		{
+			translate_right.y -= 0.1f;
+		}
 		break;
 	case 'l':
-		translateKey = 5;
+		if (selected == 1)
+		{
+			translate_left.z += 0.1f;
+		}
+		else if (selected == 2)
+		{
+			translate_right.z += 0.1f;
+		}
 		break;
 	case 'L':
-		translateKey = 6;
+		if (selected == 1)
+		{
+			translate_left.z -= 0.1f;
+		}
+		else if (selected == 2)
+		{
+			translate_right.z -= 0.1f;
+		}
 		break;
 	case 'v': //애니메이션 1
 		animationKey = 1;
 		break;
 	case 'b': //2
+		right_start = translate_right;
+		left_start = translate_left;
+		t = 0;
 		animationKey = 2;
 		break;
 	case 'n': //3
+		right_start = translate_right;
+		left_start = translate_left;
+		t = 0;
 		animationKey = 3;
 		break;
 	case 'm': //4
+		right_start = translate_right;
+		left_start = translate_left;
+		t = 0;
 		animationKey = 4;
 		break;
 	case ',': //5
@@ -708,10 +828,29 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		break;
 	case 's':
 		rotateKey = 0;
-		translateKey = 0;
+		animationKey = 0;
+		break;
+	case 'S':
+		rotateKey = 0;
+		animationKey = 0;
+		xRotateAni = 30.0f;
+		yRotateAni = -30.0f;
+		yRotateworld = -30.0f;
+		translate_left = { -0.5f,0.0f,0.0f };
+		translate_right = { 0.5f,0.0f,0.0f };
 		break;
 	case 'c':
 		change_obj();
+		break;
+	case 'C': //Clear
+		spiral = { 0.0f,0.0f,0.0f,0.0f,0.5f,0.5f };
+		seta = 0.0f;
+		radius = 0.05f;
+
+		spiral_left = 0;
+		spiral_right = 0;
+		translate_left = { -0.5f,0.0f,0.0f };
+		translate_right = { 0.5f,0.0f,0.0f };
 		break;
 	case 'q':
 		glutLeaveMainLoop();
@@ -765,5 +904,4 @@ int main(int argc, char** argv)
 	glutKeyboardFunc(Keyboard);
 	glutMouseFunc(Mouse);
 	glutMainLoop();
-
 }

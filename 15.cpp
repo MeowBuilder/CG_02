@@ -272,42 +272,42 @@ bool Set_VAO() {
 
 	glBindVertexArray(0);
 
-	//Load_Object("tetrahedron.obj");
+	Load_Object("tetrahedron.obj");
 
-	//glGenVertexArrays(1, &triangleVertexArrayObject_2);
-	//glBindVertexArray(triangleVertexArrayObject_2);
+	glGenVertexArrays(1, &triangleVertexArrayObject_2);
+	glBindVertexArray(triangleVertexArrayObject_2);
 
 
-	//glGenBuffers(1, &trianglePositionVertexBufferObjectID_2);
-	//glBindBuffer(GL_ARRAY_BUFFER, trianglePositionVertexBufferObjectID_2);
-	//glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+	glGenBuffers(1, &trianglePositionVertexBufferObjectID_2);
+	glBindBuffer(GL_ARRAY_BUFFER, trianglePositionVertexBufferObjectID_2);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
 
-	//glGenBuffers(1, &trianglePositionElementBufferObject_2);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, trianglePositionElementBufferObject_2);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, vertexIndices.size() * sizeof(unsigned int), &vertexIndices[0], GL_STATIC_DRAW);
+	glGenBuffers(1, &trianglePositionElementBufferObject_2);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, trianglePositionElementBufferObject_2);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, vertexIndices.size() * sizeof(unsigned int), &vertexIndices[0], GL_STATIC_DRAW);
 
-	//positionAttribute = glGetAttribLocation(shaderProgramID, "positionAttribute");
-	//if (positionAttribute == -1) {
-	//	cerr << "position 속성 설정 실패" << endl;
-	//	return false;
-	//}
-	//glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	//glEnableVertexAttribArray(positionAttribute);
+	positionAttribute = glGetAttribLocation(shaderProgramID, "positionAttribute");
+	if (positionAttribute == -1) {
+		cerr << "position 속성 설정 실패" << endl;
+		return false;
+	}
+	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(positionAttribute);
 
-	//glGenBuffers(1, &triangleColorVertexBufferObjectID_2);
-	//glBindBuffer(GL_ARRAY_BUFFER, triangleColorVertexBufferObjectID_2);
-	//glBufferData(GL_ARRAY_BUFFER, sizeof(color), color, GL_STATIC_DRAW);
+	glGenBuffers(1, &triangleColorVertexBufferObjectID_2);
+	glBindBuffer(GL_ARRAY_BUFFER, triangleColorVertexBufferObjectID_2);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(color), color, GL_STATIC_DRAW);
 
-	//colorAttribute = glGetAttribLocation(shaderProgramID, "colorAttribute");
-	//if (colorAttribute == -1) {
-	//	cerr << "color 속성 설정 실패" << endl;
-	//	return false;
-	//}
-	//glBindBuffer(GL_ARRAY_BUFFER, triangleColorVertexBufferObjectID_2);
-	//glVertexAttribPointer(colorAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	//glEnableVertexAttribArray(colorAttribute);
+	colorAttribute = glGetAttribLocation(shaderProgramID, "colorAttribute");
+	if (colorAttribute == -1) {
+		cerr << "color 속성 설정 실패" << endl;
+		return false;
+	}
+	glBindBuffer(GL_ARRAY_BUFFER, triangleColorVertexBufferObjectID_2);
+	glVertexAttribPointer(colorAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(colorAttribute);
 
-	//glBindVertexArray(0);
+	glBindVertexArray(0);
 
 
 	return true;
@@ -371,8 +371,8 @@ GLvoid drawScene()
 		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 		break;
 	case 1:
-		/*glBindVertexArray(triangleVertexArrayObject_2);
-		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);*/
+		glBindVertexArray(triangleVertexArrayObject_2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 		break;
 	case 2:
 		qobj = gluNewQuadric();
@@ -426,8 +426,8 @@ GLvoid drawScene()
 		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 		break;
 	case 1:
-		/*glBindVertexArray(triangleVertexArrayObject_2);
-		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);*/
+		glBindVertexArray(triangleVertexArrayObject_2);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 		break;
 	case 2:
 		qobj = gluNewQuadric();
@@ -453,12 +453,6 @@ GLvoid drawScene()
 	default:
 		break;
 	}
-
-
-
-
-
-
 	glutSwapBuffers();
 }
 
