@@ -201,7 +201,7 @@ bool Make_Shader_Program() {
 }
 
 bool Set_VAO() {
-	Load_Object("cube.obj");
+	Load_Object("cube_456.obj");
 
 	float color[] = {
 	   0.5f, 0.0f, 0.5f,//4

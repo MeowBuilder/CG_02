@@ -346,14 +346,14 @@ GLvoid drawScene()
 
 	glUseProgram(shaderProgramID);
 
+	glBindVertexArray(triangleVertexArrayObject);
+
 	glm::mat4 TR = glm::mat4(1.0f);
 	TR = glm::rotate(TR, glm::radians(xRotateAni), glm::vec3(1.0, 0.0, 0.0));
 	TR = glm::rotate(TR, glm::radians(yRotateAni), glm::vec3(0.0, 1.0, 0.0));
-
+	TR = glm::scale(TR, glm::vec3(0.25, 0.25, 0.25));
 	unsigned int modelLocation = glGetUniformLocation(shaderProgramID, "transform");
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
-
-	glBindVertexArray(triangleVertexArrayObject);
 
 	if (isCube)
 	{
@@ -369,7 +369,10 @@ GLvoid drawScene()
 			glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * 3 * open_face[i]));
 		}
 	}
-
+	TR = glm::mat4(1.0f);
+	TR = glm::rotate(TR, glm::radians(10.0f), glm::vec3(1.0, 0.0, 0.0));
+	TR = glm::rotate(TR, glm::radians(10.0f), glm::vec3(0.0, 1.0, 0.0));
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
 	glBindVertexArray(Line_VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, Line_VBO);

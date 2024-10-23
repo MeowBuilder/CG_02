@@ -27,6 +27,9 @@
     <ClCompile Include="16.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="17.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="fragment.glsl">
@@ -37,13 +40,13 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Object Include="cone.obj">
+      <Filter>리소스 파일</Filter>
+    </Object>
     <Object Include="cube.obj">
       <Filter>리소스 파일</Filter>
     </Object>
     <Object Include="tetrahedron.obj">
-      <Filter>리소스 파일</Filter>
-    </Object>
-    <Object Include="cone.obj">
       <Filter>리소스 파일</Filter>
     </Object>
   </ItemGroup>
