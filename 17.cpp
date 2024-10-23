@@ -45,14 +45,17 @@ std::vector< glm::vec2 > uvs;
 std::vector< glm::vec3 > normals;
 
 std::vector<glm::vec3> translate_face(6,glm::vec3(0.0f, 0.0f, 0.0f));
-std::vector<glm::vec2> rotate_face(6, glm::vec2(30.0f, 30.0f));
+std::vector<glm::vec2> rotate_face(6, glm::vec2(0.0f, 0.0f));
 std::vector<glm::vec3> scale_face(6, glm::vec3(0.25f, 0.25f, 0.25f));
+std::vector<float> trans_dir = { 1,0.01f,0.01f };
 
 std::vector<int> open_face = { 0,1,2,3,4,5,6 };
 
+float world_y_rot = 30.0f;
+
 bool isCube = true;
 
-int animKey = 0;
+std::vector<bool> animKey(6, false);
 
 char* File_To_Buf(const char* file)
 {
@@ -339,13 +342,62 @@ bool Set_VAO() {
 	return true;
 }
 
+glm::vec3 move_to_origin(int face_index) {
+	if (isCube)//À°¸éÃ¼
+	{
+		switch (face_index)
+		{
+		case 2:
+			return glm::vec3(0.0f, -0.5f, 0.0f);
+			break;
+		case 5:
+			return glm::vec3(0.0f, 0.5f, -0.5f);
+			break;
+		default:
+			break;
+		}
+	}
+	else//»ç°¢»Ô
+	{
+
+	}
+}
+
+void rotate_origin_x(int face_index, glm::mat4* TR) {
+	if (isCube)//À°¸éÃ¼
+	{
+		switch (face_index)
+		{
+		case 2:
+			*TR = glm::translate(*TR, -move_to_origin(face_index));
+			*TR = glm::rotate(*TR, glm::radians(rotate_face[face_index].x), glm::vec3(1.0, 0.0, 0.0));
+			*TR = glm::translate(*TR, move_to_origin(face_index));
+			break;
+		case 5:
+			*TR = glm::translate(*TR, -move_to_origin(face_index));
+			*TR = glm::rotate(*TR, glm::radians(rotate_face[face_index].x), glm::vec3(1.0, 0.0, 0.0));
+			*TR = glm::translate(*TR, move_to_origin(face_index));
+			break;
+		default:
+			break;
+		}
+	}
+	else//»ç°¢»Ô
+	{
+
+	}
+}
+
+
 void calcndraw(int face_index) {
 	glBindVertexArray(triangleVertexArrayObject);
 
 	glm::mat4 TR = glm::mat4(1.0f);
-	TR = glm::rotate(TR, glm::radians(rotate_face[face_index].x), glm::vec3(1.0, 0.0, 0.0));
-	TR = glm::rotate(TR, glm::radians(rotate_face[face_index].y), glm::vec3(0.0, 1.0, 0.0));
+	TR = glm::rotate(TR, glm::radians(30.0f), glm::vec3(1.0, 0.0, 0.0));
+	TR = glm::rotate(TR, glm::radians(world_y_rot), glm::vec3(0.0, 1.0, 0.0));
+	TR = glm::translate(TR, translate_face[face_index]);
 	TR = glm::scale(TR, scale_face[face_index]);
+	rotate_origin_x(face_index, &TR);
 	unsigned int modelLocation = glGetUniformLocation(shaderProgramID, "transform");
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
 
@@ -407,7 +459,7 @@ GLvoid drawScene()
 
 	for (int i = 0; i < open_face.size(); i++)
 	{
-		calcndraw(i);
+		calcndraw(open_face[i]);
 	}
 
 
@@ -428,32 +480,55 @@ GLvoid TimerFunction1(int value)
 			rotate_face[i].y += 0.5f;
 		}
 
-	switch (animKey)
+
+	if (animKey[0])
 	{
-	case 1:
 		//À­¸é °¡¿îµ¥ Ãà Áß½É È¸Àü(xÃà ±âÁØ?)
-		break;
-	case 2:
+		rotate_face[2].x += 0.5;
+	}
+	if (animKey[1])
+	{
 		//¾Õ¸é ¿­°í´Ý±â
-		break;
-	case 3:
+		rotate_face[5].x += trans_dir[0];
+		if (rotate_face[5].x >= 120 || rotate_face[5].x <= 0)
+		{
+			trans_dir[0] = -trans_dir[0];
+		}
+	}
+	if (animKey[2])
+	{
 		//¿·¸é À§·Î ¿­°í´Ý±â
-		break;
-	case 4:
+		translate_face[1].y += trans_dir[1];
+		translate_face[3].y += trans_dir[1];
+		if (translate_face[1].y >= 0.5 || translate_face[1].y <= -0.5f)
+		{
+			trans_dir[1] = -trans_dir[1];
+		}
+	}
+	if (animKey[3])
+	{
 		//µÞ¸é Ä¿Á³´Ù ÀÛ¾ÆÁ³´Ù
-		break;
-	case 5:
+		scale_face[0].y += trans_dir[2];
+		scale_face[0].x += trans_dir[2];
+		if (scale_face[0].y >= 0.25f || scale_face[0].y <= 0.0f || scale_face[0].x >= 0.25f || scale_face[0].x <= 0.0f)
+		{
+			trans_dir[2] = -trans_dir[2];
+		}
+	}
+
+	//»ç°¢»Ô
+	if (animKey[4])
+	{
 		// ¸ðµç ¸éÀÌ ¿­¸®°í ´ÝÈù´Ù.
-		break;
-	case 6:
+	}
+	if (animKey[5])
+	{
 		//ÇÏ³ª¾¿ Â÷·Ê´ë·Î 90¿­±â/´Ý±â
-		break;
-	default:
-		break;
 	}
 	glutTimerFunc(10, TimerFunction1, 1);
 }
 
+// 0: µÞ¸é 1¿ÞÂÊ ¿·¸é 2: À­¸é 3:¿À¸¥ÂÊ ¿·¸é 4:¿À¸¥ÂÊ ¿·¸é 5:¾Õ¸é
 GLvoid Keyboard(unsigned char key, int x, int y)
 {
 	vector<int> new_opnenface = {};
@@ -468,47 +543,42 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		glutLeaveMainLoop();
 		break;
 
-	case 'p':
+	case 'p': //Á÷°¢ / ¿ø±ÙÅõ¿µ
 
 		break;
 
 	case 't':
 		isCube = true;
 		Set_VAO();
+		animKey[0] = !animKey[0];
 		break;
 	case 'f':
 		isCube = true;
 		Set_VAO();
+		animKey[1] = !animKey[1];
 		break;
 	case 's':
 		isCube = true;
 		Set_VAO();
+		animKey[2] = !animKey[2];
 		break;
 	case 'b':
 		isCube = true;
 		Set_VAO();
+		animKey[3] = !animKey[3];
 		break;
 
 	case 'o':
 		isCube = false;
 		Set_VAO();
+		animKey[4] = !animKey[4];
 		break;
 	case 'r':
 		isCube = false;
 		Set_VAO();
+		animKey[5] = !animKey[5];
 		break;
 	}
-	glutPostRedisplay();
-}
-
-void Mouse(int button, int state, int x, int y)
-{
-	GLfloat half_w = WIN_W / 2.0f;
-	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
-		mx = (x - half_w) / half_w;
-		my = (half_w - y) / half_w;
-	}
-	Set_VAO();
 	glutPostRedisplay();
 }
 
@@ -545,6 +615,5 @@ int main(int argc, char** argv)
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
 	glutKeyboardFunc(Keyboard);
-	glutMouseFunc(Mouse);
 	glutMainLoop();
 }
