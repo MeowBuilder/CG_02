@@ -50,12 +50,14 @@ std::vector<glm::vec3> scale_face(6, glm::vec3(0.25f, 0.25f, 0.25f));
 std::vector<float> trans_dir = { 1,0.01f,0.01f };
 
 std::vector<int> open_face = { 0,1,2,3,4,5,6 };
-
+std::vector<int> tet_rot_dir(4, 1);
 float world_y_rot = 30.0f;
 
+int face = 0;
 bool isCube = true;
 
 std::vector<bool> animKey(6, false);
+std::vector<bool> anim5_face(4, false);
 
 char* File_To_Buf(const char* file)
 {
@@ -359,7 +361,23 @@ glm::vec3 move_to_origin(int face_index) {
 	}
 	else//»ç°¢»Ô
 	{
-
+		switch (face_index)
+		{
+		case 1:
+			return glm::vec3(0.0f, 0.5f, 0.5f);
+			break;
+		case 2:
+			return glm::vec3(-0.5f, 0.5f, 0.0f);
+			break;
+		case 3:
+			return glm::vec3(0.0f, 0.5f, -0.5f);
+			break;
+		case 4:
+			return glm::vec3(0.5f, 0.5f, 0.0f);
+			break;
+		default:
+			break;
+		}
 	}
 }
 
@@ -384,7 +402,31 @@ void rotate_origin_x(int face_index, glm::mat4* TR) {
 	}
 	else//»ç°¢»Ô
 	{
-
+		switch (face_index)
+		{
+		case 1:
+			*TR = glm::translate(*TR, -move_to_origin(face_index));
+			*TR = glm::rotate(*TR, glm::radians(-rotate_face[face_index].x), glm::vec3(1.0, 0.0, 0.0));
+			*TR = glm::translate(*TR, move_to_origin(face_index));
+			break;
+		case 2:
+			*TR = glm::translate(*TR, -move_to_origin(face_index));
+			*TR = glm::rotate(*TR, glm::radians(-rotate_face[face_index].x), glm::vec3(0.0, 0.0, 1.0));
+			*TR = glm::translate(*TR, move_to_origin(face_index));
+			break;
+		case 3:
+			*TR = glm::translate(*TR, -move_to_origin(face_index));
+			*TR = glm::rotate(*TR, glm::radians(rotate_face[face_index].x), glm::vec3(1.0, 0.0, 0.0));
+			*TR = glm::translate(*TR, move_to_origin(face_index));
+			break;
+		case 4:
+			*TR = glm::translate(*TR, -move_to_origin(face_index));
+			*TR = glm::rotate(*TR, glm::radians(rotate_face[face_index].x), glm::vec3(0.0, 0.0, 1.0));
+			*TR = glm::translate(*TR, move_to_origin(face_index));
+			break;
+		default:
+			break;
+		}
 	}
 }
 
@@ -477,7 +519,7 @@ GLvoid TimerFunction1(int value)
 	if (yRotate)
 		for (int i = 0; i < 6; i++)
 		{
-			rotate_face[i].y += 0.5f;
+			world_y_rot += 0.5f;
 		}
 
 
@@ -490,7 +532,7 @@ GLvoid TimerFunction1(int value)
 	{
 		//¾Õ¸é ¿­°í´Ý±â
 		rotate_face[5].x += trans_dir[0];
-		if (rotate_face[5].x >= 120 || rotate_face[5].x <= 0)
+		if (rotate_face[5].x >= 90 || rotate_face[5].x <= 0)
 		{
 			trans_dir[0] = -trans_dir[0];
 		}
@@ -520,15 +562,41 @@ GLvoid TimerFunction1(int value)
 	if (animKey[4])
 	{
 		// ¸ðµç ¸éÀÌ ¿­¸®°í ´ÝÈù´Ù.
+		for (int i = 1; i < 5; i++)
+		{
+			rotate_face[i].x += trans_dir[0];
+		}
+		if (rotate_face[1].x >= 235 || rotate_face[1].x <= 0)
+		{
+			trans_dir[0] = -trans_dir[0];
+		}
+		
 	}
 	if (animKey[5])
 	{
 		//ÇÏ³ª¾¿ Â÷·Ê´ë·Î 90¿­±â/´Ý±â
+		for (int i = 0; i < anim5_face.size(); i++)
+		{
+			if (anim5_face[i])
+			{
+				rotate_face[i+1].x += tet_rot_dir[i];
+				if (rotate_face[i+1].x >= 120)
+				{
+					tet_rot_dir[i] = -tet_rot_dir[i];
+				}
+				else if (rotate_face[i + 1].x <= 0)
+				{
+					anim5_face[i] = false;
+					tet_rot_dir[i] = -tet_rot_dir[i];
+				}
+			}
+		}
 	}
 	glutTimerFunc(10, TimerFunction1, 1);
 }
 
-// 0: µÞ¸é 1¿ÞÂÊ ¿·¸é 2: À­¸é 3:¿À¸¥ÂÊ ¿·¸é 4:¿À¸¥ÂÊ ¿·¸é 5:¾Õ¸é
+
+// 0:¾Æ·§¸é 1:µÞ ¿À ¾Õ ¿Þ ¼ø
 GLvoid Keyboard(unsigned char key, int x, int y)
 {
 	vector<int> new_opnenface = {};
@@ -567,7 +635,12 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		Set_VAO();
 		animKey[3] = !animKey[3];
 		break;
-
+	case '1':
+		isCube = false;
+		Set_VAO();
+		open_face.clear();
+		open_face.push_back(face++);
+		break;
 	case 'o':
 		isCube = false;
 		Set_VAO();
@@ -576,7 +649,12 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 'r':
 		isCube = false;
 		Set_VAO();
-		animKey[5] = !animKey[5];
+		if (!animKey[5])
+		{
+			animKey[5] = true;
+		}
+		anim5_face[face++] = true;
+		if (face == 4) face = 0;
 		break;
 	}
 	glutPostRedisplay();
