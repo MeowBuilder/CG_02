@@ -80,6 +80,7 @@ std::vector< glm::vec3 > normals;
 int left_obj = 0;
 int right_obj = 1;
 
+
 char* File_To_Buf(const char* file)
 {
 	ifstream in(file, ios_base::binary);
@@ -381,6 +382,7 @@ GLvoid drawScene()
 	TR = glm::rotate(TR, glm::radians(yRotateworld), glm::vec3(0.0, 1.0, 0.0));
 	unsigned int modelLocation = glGetUniformLocation(shaderProgramID, "transform");
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
+
 	glDrawArrays(GL_LINES, 0, line.size() / 3);
 
 

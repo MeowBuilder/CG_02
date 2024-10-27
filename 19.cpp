@@ -1,4 +1,4 @@
-Ôªø#include <GL/glew.h>
+#include <GL/glew.h>
 #include <GL/freeglut.h>
 #include <GL/freeglut_ext.h>
 
@@ -44,13 +44,6 @@ std::vector< glm::vec3 > vertices;
 std::vector< glm::vec2 > uvs;
 std::vector< glm::vec3 > normals;
 
-std::vector<glm::vec3> translate_face(6, glm::vec3(0.0f, 0.0f, 0.0f));
-std::vector<glm::vec2> rotate_face(6, glm::vec2(0.0f, 0.0f));
-std::vector<glm::vec3> scale_face(6, glm::vec3(1.0f, 1.0f, 1.0f));
-std::vector<float> trans_dir = { 1,0.01f,0.01f };
-
-std::vector<int> open_face = { 0,1,2,3,4,5 };
-std::vector<int> tet_rot_dir(4, 1);
 float world_y_rot = 30.0f;
 
 int face = 0;
@@ -66,7 +59,7 @@ char* File_To_Buf(const char* file)
 	ifstream in(file, ios_base::binary);
 
 	if (!in) {
-		cerr << file << "ÌååÏùº Î™ªÏ∞æÏùå";
+		cerr << file << "∆ƒ¿œ ∏¯√£¿Ω";
 		exit(1);
 	}
 
@@ -92,7 +85,7 @@ bool  Load_Object(const char* path) {
 
 	ifstream in(path);
 	if (!in) {
-		cerr << path << "ÌååÏùº Î™ªÏ∞æÏùå";
+		cerr << path << "∆ƒ¿œ ∏¯√£¿Ω";
 		exit(1);
 	}
 
@@ -134,74 +127,73 @@ bool  Load_Object(const char* path) {
 }
 
 bool Make_Shader_Program() {
-	//ÏÑ∏Ïù¥Îçî ÏΩîÎìú ÌååÏùº Î∂àÎü¨Ïò§Í∏∞
+	//ºº¿Ã¥ı ƒ⁄µÂ ∆ƒ¿œ ∫“∑Øø¿±‚
 	const GLchar* vertexShaderSource = File_To_Buf("vertex.glsl");
 	const GLchar* fragmentShaderSource = File_To_Buf("fragment.glsl");
 
-	//ÏÑ∏Ïù¥Îçî Í∞ùÏ≤¥ ÎßåÎì§Í∏∞
+	//ºº¿Ã¥ı ∞¥√º ∏∏µÈ±‚
 	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	//ÏÑ∏Ïù¥Îçî Í∞ùÏ≤¥Ïóê ÏÑ∏Ïù¥Îçî ÏΩîÎìú Î∂ôÏù¥Í∏∞
+	//ºº¿Ã¥ı ∞¥√ºø° ºº¿Ã¥ı ƒ⁄µÂ ∫Ÿ¿Ã±‚
 	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-	//ÏÑ∏Ïù¥Îçî Í∞ùÏ≤¥ Ïª¥ÌååÏùºÌïòÍ∏∞
+	//ºº¿Ã¥ı ∞¥√º ƒƒ∆ƒ¿œ«œ±‚
 	glCompileShader(vertexShader);
 
 	GLint result;
 	GLchar errorLog[512];
 
-	//ÏÑ∏Ïù¥Îçî ÏÉÅÌÉú Í∞ÄÏ†∏Ïò§Í∏∞
+	//ºº¿Ã¥ı ªÛ≈¬ ∞°¡Æø¿±‚
 	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &result);
 	if (!result)
 	{
 		glGetShaderInfoLog(vertexShader, 512, NULL, errorLog);
-		cerr << "ERROR: vertex shader Ïª¥ÌååÏùº Ïã§Ìå®\n" << errorLog << endl;
+		cerr << "ERROR: vertex shader ƒƒ∆ƒ¿œ Ω«∆–\n" << errorLog << endl;
 		return false;
 	}
 
-	//ÏÑ∏Ïù¥Îçî Í∞ùÏ≤¥ ÎßåÎì§Í∏∞
+	//ºº¿Ã¥ı ∞¥√º ∏∏µÈ±‚
 	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	//ÏÑ∏Ïù¥Îçî Í∞ùÏ≤¥Ïóê ÏÑ∏Ïù¥Îçî ÏΩîÎìú Î∂ôÏù¥Í∏∞
+	//ºº¿Ã¥ı ∞¥√ºø° ºº¿Ã¥ı ƒ⁄µÂ ∫Ÿ¿Ã±‚
 	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-	//ÏÑ∏Ïù¥Îçî Í∞ùÏ≤¥ Ïª¥ÌååÏùºÌïòÍ∏∞
+	//ºº¿Ã¥ı ∞¥√º ƒƒ∆ƒ¿œ«œ±‚
 	glCompileShader(fragmentShader);
-	//ÏÑ∏Ïù¥Îçî ÏÉÅÌÉú Í∞ÄÏ†∏Ïò§Í∏∞
+	//ºº¿Ã¥ı ªÛ≈¬ ∞°¡Æø¿±‚
 	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &result);
 	if (!result)
 	{
 		glGetShaderInfoLog(fragmentShader, 512, NULL, errorLog);
-		cerr << "ERROR: fragment shader Ïª¥ÌååÏùº Ïã§Ìå®\n" << errorLog << endl;
+		cerr << "ERROR: fragment shader ƒƒ∆ƒ¿œ Ω«∆–\n" << errorLog << endl;
 		return false;
 	}
 
-	//ÏÑ∏Ïù¥Îçî ÌîÑÎ°úÍ∑∏Îû® ÏÉùÏÑ±
+	//ºº¿Ã¥ı «¡∑Œ±◊∑• ª˝º∫
 	shaderProgramID = glCreateProgram();
-	//ÏÑ∏Ïù¥Îçî ÌîÑÎ°úÍ∑∏Îû®Ïóê ÏÑ∏Ïù¥Îçî Í∞ùÏ≤¥Îì§ÏùÑ Î∂ôÏù¥Í∏∞
+	//ºº¿Ã¥ı «¡∑Œ±◊∑•ø° ºº¿Ã¥ı ∞¥√ºµÈ¿ª ∫Ÿ¿Ã±‚
 	glAttachShader(shaderProgramID, vertexShader);
 	glAttachShader(shaderProgramID, fragmentShader);
-	//ÏÑ∏Ïù¥Îçî ÌîÑÎ°úÍ∑∏Îû® ÎßÅÌÅ¨
+	//ºº¿Ã¥ı «¡∑Œ±◊∑• ∏µ≈©
 	glLinkProgram(shaderProgramID);
 
-	//ÏÑ∏Ïù¥Îçî Í∞ùÏ≤¥ ÏÇ≠Ï†úÌïòÍ∏∞
+	//ºº¿Ã¥ı ∞¥√º ªË¡¶«œ±‚
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 
-	//ÌîÑÎ°úÍ∑∏Îû® ÏÉÅÌÉú Í∞ÄÏ†∏Ïò§Í∏∞
+	//«¡∑Œ±◊∑• ªÛ≈¬ ∞°¡Æø¿±‚
 	glGetProgramiv(shaderProgramID, GL_LINK_STATUS, &result);
 	if (!result) {
 		glGetProgramInfoLog(shaderProgramID, 512, NULL, errorLog);
-		cerr << "ERROR: shader program Ïó∞Í≤∞ Ïã§Ìå®\n" << errorLog << endl;
+		cerr << "ERROR: shader program ø¨∞· Ω«∆–\n" << errorLog << endl;
 		return false;
 	}
-	//ÏÑ∏Ïù¥Îçî ÌîÑÎ°úÍ∑∏Îû® ÌôúÏÑ±Ìôî
+	//ºº¿Ã¥ı «¡∑Œ±◊∑• »∞º∫»≠
 	glUseProgram(shaderProgramID);
 
 	return true;
 }
 
 bool Set_VAO() {
-	//ÏÇºÍ∞ÅÌòïÏùÑ Íµ¨ÏÑ±ÌïòÎäî vertex Îç∞Ïù¥ÌÑ∞ - positionÍ≥º color
+	//ªÔ∞¢«¸¿ª ±∏º∫«œ¥¬ vertex µ•¿Ã≈Õ - position∞˙ color
 
-	isCube ? Load_Object("cube.obj") : Load_Object("tetrahedron.obj");
-	isCube ? open_face = { 0,1,2,3,4,5 } : open_face = { 0,1,2,3,4 };
+	Load_Object("cube.obj");
 
 	float color_cube[] = {
 	   0.5f, 0.0f, 0.5f,//4
@@ -258,207 +250,66 @@ bool Set_VAO() {
 	   0.0f, 0.0f, 0.0f
 	};
 
-	float color_tetrahedron[] = {
-	   1.0f, 0.0f, 0.0f,//3
-	   0.0f, 1.0f, 0.0f,//2
-	   0.0f, 0.0f, 1.0f,//1
-
-	   1.0f, 0.5f, 0.5f,//4
-	   1.0f, 0.5f, 0.0f,//3
-	   1.0f, 0.0f, 0.5f,//1
-
-	   0.5f, 1.0f, 0.5f,//1
-	   0.5f, 1.0f, 0.0f,//5
-	   0.0f, 1.0f, 0.5f,//2
-
-	   0.5f, 0.5f, 1.0f,//2
-	   0.5f, 0.0f, 1.0f,//5
-	   0.0f, 0.5f, 1.0f,//3
-
-	   0.5f, 0.5f, 1.0f,//3
-	   0.5f, 0.0f, 1.0f,//5
-	   0.0f, 0.5f, 1.0f,//4
-
-	   0.5f, 0.5f, 1.0f,//4
-	   0.5f, 0.0f, 1.0f,//5
-	   0.0f, 0.5f, 1.0f,//1
-	};
-
 	glGenVertexArrays(1, &Line_VAO);
 	glBindVertexArray(Line_VAO);
 	glGenBuffers(1, &Line_VBO);
 
-	//Î≤ÑÌÖçÏä§ Î∞∞Ïó¥ Ïò§Î∏åÏ†ùÌä∏ (VAO) Ïù¥Î¶Ñ ÏÉùÏÑ±
+	//πˆ≈ÿΩ∫ πËø≠ ø¿∫Í¡ß∆Æ (VAO) ¿Ã∏ß ª˝º∫
 	glGenVertexArrays(1, &triangleVertexArrayObject);
-	//VAOÎ•º Î∞îÏù∏ÎìúÌïúÎã§.
+	//VAO∏¶ πŸ¿ŒµÂ«—¥Ÿ.
 	glBindVertexArray(triangleVertexArrayObject);
 
-	//Vertex Buffer Object(VBO)Î•º ÏÉùÏÑ±ÌïòÏó¨ vertex Îç∞Ïù¥ÌÑ∞Î•º Î≥µÏÇ¨ÌïúÎã§.
+	//Vertex Buffer Object(VBO)∏¶ ª˝º∫«œø© vertex µ•¿Ã≈Õ∏¶ ∫πªÁ«—¥Ÿ.
 
-	//Î≤ÑÌÖçÏä§ Î≤ÑÌçº Ïò§Î∏åÏ†ùÌä∏ (VBO) Ïù¥Î¶Ñ ÏÉùÏÑ±
+	//πˆ≈ÿΩ∫ πˆ∆€ ø¿∫Í¡ß∆Æ (VBO) ¿Ã∏ß ª˝º∫
 	glGenBuffers(1, &trianglePositionVertexBufferObjectID);
-	//Î≤ÑÌçº Ïò§Î∏åÏ†ùÌä∏Î•º Î∞îÏù∏Îìú ÌïúÎã§.
+	//πˆ∆€ ø¿∫Í¡ß∆Æ∏¶ πŸ¿ŒµÂ «—¥Ÿ.
 	glBindBuffer(GL_ARRAY_BUFFER, trianglePositionVertexBufferObjectID);
-	//Î≤ÑÌçº Ïò§Î∏åÏ†ùÌä∏Ïùò Îç∞Ïù¥ÌÑ∞Î•º ÏÉùÏÑ±
+	//πˆ∆€ ø¿∫Í¡ß∆Æ¿« µ•¿Ã≈Õ∏¶ ª˝º∫
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
 
-	//ÏóòÎ¶¨Î©òÌä∏ Î≤ÑÌçº Ïò§Î∏åÏ†ùÌä∏ (EBO) Ïù¥Î¶Ñ ÏÉùÏÑ±
+	//ø§∏Æ∏‡∆Æ πˆ∆€ ø¿∫Í¡ß∆Æ (EBO) ¿Ã∏ß ª˝º∫
 	glGenBuffers(1, &trianglePositionElementBufferObject);
-	//Î≤ÑÌçº Ïò§Î∏åÏ†ùÌä∏Î•º Î∞îÏù∏Îìú ÌïúÎã§.
+	//πˆ∆€ ø¿∫Í¡ß∆Æ∏¶ πŸ¿ŒµÂ «—¥Ÿ.
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, trianglePositionElementBufferObject);
-	//Î≤ÑÌçº Ïò§Î∏åÏ†ùÌä∏Ïùò Îç∞Ïù¥ÌÑ∞Î•º ÏÉùÏÑ±
+	//πˆ∆€ ø¿∫Í¡ß∆Æ¿« µ•¿Ã≈Õ∏¶ ª˝º∫
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, vertexIndices.size() * sizeof(unsigned int), &vertexIndices[0], GL_STATIC_DRAW);
 
-	//ÏúÑÏπò Í∞ÄÏ†∏Ïò§Í∏∞ Ìï®Ïàò
+	//¿ßƒ° ∞°¡Æø¿±‚ «‘ºˆ
 	GLint positionAttribute = glGetAttribLocation(shaderProgramID, "positionAttribute");
 	if (positionAttribute == -1) {
-		cerr << "position ÏÜçÏÑ± ÏÑ§Ï†ï Ïã§Ìå®" << endl;
+		cerr << "position º”º∫ º≥¡§ Ω«∆–" << endl;
 		return false;
 	}
-	//Î≤ÑÌÖçÏä§ ÏÜçÏÑ± Îç∞Ïù¥ÌÑ∞Ïùò Î∞∞Ïó¥ÏùÑ Ï†ïÏùò
+	//πˆ≈ÿΩ∫ º”º∫ µ•¿Ã≈Õ¿« πËø≠¿ª ¡§¿«
 	glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	//Î≤ÑÌÖçÏä§ ÏÜçÏÑ± Î∞∞Ïó¥ÏùÑ ÏÇ¨Ïö©ÌïòÎèÑÎ°ù ÌïúÎã§.
+	//πˆ≈ÿΩ∫ º”º∫ πËø≠¿ª ªÁøÎ«œµµ∑œ «—¥Ÿ.
 	glEnableVertexAttribArray(positionAttribute);
 
-	//ÏπºÎùº Î≤ÑÌçº Ïò§Î∏åÏ†ùÌä∏ (VBO) Ïù¥Î¶Ñ ÏÉùÏÑ±
+	//ƒÆ∂Û πˆ∆€ ø¿∫Í¡ß∆Æ (VBO) ¿Ã∏ß ª˝º∫
 	glGenBuffers(1, &triangleColorVertexBufferObjectID);
-	//Î≤ÑÌçº Ïò§Î∏åÏ†ùÌä∏Î•º Î∞îÏù∏Îìú ÌïúÎã§.
+	//πˆ∆€ ø¿∫Í¡ß∆Æ∏¶ πŸ¿ŒµÂ «—¥Ÿ.
 	glBindBuffer(GL_ARRAY_BUFFER, triangleColorVertexBufferObjectID);
-	//Î≤ÑÌçº Ïò§Î∏åÏ†ùÌä∏Ïùò Îç∞Ïù¥ÌÑ∞Î•º ÏÉùÏÑ±
-	isCube ? glBufferData(GL_ARRAY_BUFFER, sizeof(color_cube), color_cube, GL_STATIC_DRAW) : glBufferData(GL_ARRAY_BUFFER, sizeof(color_tetrahedron), color_tetrahedron, GL_STATIC_DRAW);
+	//πˆ∆€ ø¿∫Í¡ß∆Æ¿« µ•¿Ã≈Õ∏¶ ª˝º∫
+	glBufferData(GL_ARRAY_BUFFER, sizeof(color_cube), color_cube, GL_STATIC_DRAW);
 
-	//ÏúÑÏπò Í∞ÄÏ†∏Ïò§Í∏∞ Ìï®Ïàò
+	//¿ßƒ° ∞°¡Æø¿±‚ «‘ºˆ
 	GLint colorAttribute = glGetAttribLocation(shaderProgramID, "colorAttribute");
 	if (colorAttribute == -1) {
-		cerr << "color ÏÜçÏÑ± ÏÑ§Ï†ï Ïã§Ìå®" << endl;
+		cerr << "color º”º∫ º≥¡§ Ω«∆–" << endl;
 		return false;
 	}
-	//Î≤ÑÌçº Ïò§Î∏åÏ†ùÌä∏Î•º Î∞îÏù∏Îìú ÌïúÎã§.
+	//πˆ∆€ ø¿∫Í¡ß∆Æ∏¶ πŸ¿ŒµÂ «—¥Ÿ.
 	glBindBuffer(GL_ARRAY_BUFFER, triangleColorVertexBufferObjectID);
-	//Î≤ÑÌÖçÏä§ ÏÜçÏÑ± Îç∞Ïù¥ÌÑ∞Ïùò Î∞∞Ïó¥ÏùÑ Ï†ïÏùò
+	//πˆ≈ÿΩ∫ º”º∫ µ•¿Ã≈Õ¿« πËø≠¿ª ¡§¿«
 	glVertexAttribPointer(colorAttribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	//Î≤ÑÌÖçÏä§ ÏÜçÏÑ± Î∞∞Ïó¥ÏùÑ ÏÇ¨Ïö©ÌïòÎèÑÎ°ù ÌïúÎã§.
+	//πˆ≈ÿΩ∫ º”º∫ πËø≠¿ª ªÁøÎ«œµµ∑œ «—¥Ÿ.
 	glEnableVertexAttribArray(colorAttribute);
 
 
 	glBindVertexArray(0);
 
 	return true;
-}
-
-glm::vec3 move_to_origin(int face_index) {
-	if (isCube)//Ïú°Î©¥Ï≤¥
-	{
-		switch (face_index)
-		{
-		case 2:
-			return glm::vec3(0.0f, -0.5f, 0.0f);
-			break;
-		case 5:
-			return glm::vec3(0.0f, 0.5f, -0.5f);
-			break;
-		default:
-			break;
-		}
-	}
-	else//ÏÇ¨Í∞ÅÎøî
-	{
-		switch (face_index)
-		{
-		case 1:
-			return glm::vec3(0.0f, 0.5f, 0.5f);
-			break;
-		case 2:
-			return glm::vec3(-0.5f, 0.5f, 0.0f);
-			break;
-		case 3:
-			return glm::vec3(0.0f, 0.5f, -0.5f);
-			break;
-		case 4:
-			return glm::vec3(0.5f, 0.5f, 0.0f);
-			break;
-		default:
-			break;
-		}
-	}
-}
-
-void rotate_origin_x(int face_index, glm::mat4* TR) {
-	if (isCube)//Ïú°Î©¥Ï≤¥
-	{
-		switch (face_index)
-		{
-		case 2:
-			*TR = glm::translate(*TR, -move_to_origin(face_index));
-			*TR = glm::rotate(*TR, glm::radians(rotate_face[face_index].x), glm::vec3(1.0, 0.0, 0.0));
-			*TR = glm::translate(*TR, move_to_origin(face_index));
-			break;
-		case 5:
-			*TR = glm::translate(*TR, -move_to_origin(face_index));
-			*TR = glm::rotate(*TR, glm::radians(rotate_face[face_index].x), glm::vec3(1.0, 0.0, 0.0));
-			*TR = glm::translate(*TR, move_to_origin(face_index));
-			break;
-		default:
-			break;
-		}
-	}
-	else//ÏÇ¨Í∞ÅÎøî
-	{
-		switch (face_index)
-		{
-		case 1:
-			*TR = glm::translate(*TR, -move_to_origin(face_index));
-			*TR = glm::rotate(*TR, glm::radians(-rotate_face[face_index].x), glm::vec3(1.0, 0.0, 0.0));
-			*TR = glm::translate(*TR, move_to_origin(face_index));
-			break;
-		case 2:
-			*TR = glm::translate(*TR, -move_to_origin(face_index));
-			*TR = glm::rotate(*TR, glm::radians(-rotate_face[face_index].x), glm::vec3(0.0, 0.0, 1.0));
-			*TR = glm::translate(*TR, move_to_origin(face_index));
-			break;
-		case 3:
-			*TR = glm::translate(*TR, -move_to_origin(face_index));
-			*TR = glm::rotate(*TR, glm::radians(rotate_face[face_index].x), glm::vec3(1.0, 0.0, 0.0));
-			*TR = glm::translate(*TR, move_to_origin(face_index));
-			break;
-		case 4:
-			*TR = glm::translate(*TR, -move_to_origin(face_index));
-			*TR = glm::rotate(*TR, glm::radians(rotate_face[face_index].x), glm::vec3(0.0, 0.0, 1.0));
-			*TR = glm::translate(*TR, move_to_origin(face_index));
-			break;
-		default:
-			break;
-		}
-	}
-}
-
-void calcndraw(int face_index) {
-	glBindVertexArray(triangleVertexArrayObject);
-
-	glm::mat4 TR = glm::mat4(1.0f);
-	TR = glm::rotate(TR, glm::radians(30.0f), glm::vec3(1.0, 0.0, 0.0));
-	TR = glm::rotate(TR, glm::radians(world_y_rot), glm::vec3(0.0, 1.0, 0.0));
-	TR = glm::translate(TR, translate_face[face_index]);
-	TR = glm::scale(TR, scale_face[face_index]);
-	rotate_origin_x(face_index, &TR);
-	unsigned int modelLocation = glGetUniformLocation(shaderProgramID, "transform");
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
-
-	if (isCube)
-	{
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * 6 * face_index));
-	}
-	else
-	{
-		if (face_index == 0)
-		{
-			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-		}
-		else
-		{
-			glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (void*)(((sizeof(unsigned int) * 6) + (sizeof(unsigned int) * 3 * (face_index - 1)))));
-		}
-	}
 }
 
 GLvoid drawScene()
@@ -476,7 +327,6 @@ GLvoid drawScene()
 		0.0f, 0.0f, -10.0f, 0.0f,0.0f,1.0f,
 		0.0f, 0.0f, 10.0f, 0.0f,0.0f,1.0f
 	};
-
 
 	isCulling ? glEnable(GL_DEPTH_TEST) : glDisable(GL_DEPTH_TEST);
 	isCulling ? glEnable(GL_CULL_FACE) : glDisable(GL_CULL_FACE);
@@ -496,7 +346,7 @@ GLvoid drawScene()
 	glm::mat4 projection = glm::mat4(1.0f);
 	if (isortho)
 	{
-		projection = glm::ortho(-2.0f, 2.0f, -2.0f, 2.0f, -2.0f, 2.0f);
+		projection = glm::ortho(-5.0f, 5.0f, -5.0f, 5.0f, -10.0f, 10.0f);
 	}
 	else
 	{
@@ -523,12 +373,6 @@ GLvoid drawScene()
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
 	glDrawArrays(GL_LINES, 0, line.size() / 3);
 
-	for (int i = 0; i < open_face.size(); i++)
-	{
-		calcndraw(open_face[i]);
-	}
-
-
 	glutSwapBuffers();
 }
 
@@ -540,87 +384,14 @@ GLvoid Reshape(int w, int h)
 GLvoid TimerFunction1(int value)
 {
 	glutPostRedisplay();
-	if (yRotate)
-		for (int i = 0; i < 6; i++)
-		{
-			world_y_rot += 0.5f;
-		}
 
 
-	if (animKey[0])
-	{
-		//ÏúóÎ©¥ Í∞ÄÏö¥Îç∞ Ï∂ï Ï§ëÏã¨ ÌöåÏ†Ñ(xÏ∂ï Í∏∞Ï§Ä?)
-		rotate_face[2].x += 0.5;
-	}
-	if (animKey[1])
-	{
-		//ÏïûÎ©¥ Ïó¥Í≥†Îã´Í∏∞
-		rotate_face[5].x += trans_dir[0];
-		if (rotate_face[5].x >= 90 || rotate_face[5].x <= 0)
-		{
-			trans_dir[0] = -trans_dir[0];
-		}
-	}
-	if (animKey[2])
-	{
-		//ÏòÜÎ©¥ ÏúÑÎ°ú Ïó¥Í≥†Îã´Í∏∞
-		translate_face[1].y += trans_dir[1];
-		translate_face[3].y += trans_dir[1];
-		if (translate_face[1].y >= 0.5 || translate_face[1].y <= -0.5f)
-		{
-			trans_dir[1] = -trans_dir[1];
-		}
-	}
-	if (animKey[3])
-	{
-		//Îí∑Î©¥ Ïª§Ï°åÎã§ ÏûëÏïÑÏ°åÎã§
-		scale_face[0].y += trans_dir[2];
-		scale_face[0].x += trans_dir[2];
-		if (scale_face[0].y >= 0.25f || scale_face[0].y <= 0.0f || scale_face[0].x >= 0.25f || scale_face[0].x <= 0.0f)
-		{
-			trans_dir[2] = -trans_dir[2];
-		}
-	}
 
-	//ÏÇ¨Í∞ÅÎøî
-	if (animKey[4])
-	{
-		// Î™®Îì† Î©¥Ïù¥ Ïó¥Î¶¨Í≥† Îã´ÌûåÎã§.
-		for (int i = 1; i < 5; i++)
-		{
-			rotate_face[i].x += trans_dir[0];
-		}
-		if (rotate_face[1].x >= 235 || rotate_face[1].x <= 0)
-		{
-			trans_dir[0] = -trans_dir[0];
-		}
-		
-	}
-	if (animKey[5])
-	{
-		//ÌïòÎÇòÏî© Ï∞®Î°ÄÎåÄÎ°ú 90Ïó¥Í∏∞/Îã´Í∏∞
-		for (int i = 0; i < anim5_face.size(); i++)
-		{
-			if (anim5_face[i])
-			{
-				rotate_face[i+1].x += tet_rot_dir[i];
-				if (rotate_face[i+1].x >= 120)
-				{
-					tet_rot_dir[i] = -tet_rot_dir[i];
-				}
-				else if (rotate_face[i + 1].x <= 0)
-				{
-					anim5_face[i] = false;
-					tet_rot_dir[i] = -tet_rot_dir[i];
-				}
-			}
-		}
-	}
 	glutTimerFunc(10, TimerFunction1, 1);
 }
 
 
-// 0:ÏïÑÎû´Î©¥ 1:Îí∑ Ïò§ Ïïû Ïôº Ïàú
+// 0:æ∆∑ß∏È 1:µﬁ ø¿ æ’ øﬁ º¯
 GLvoid Keyboard(unsigned char key, int x, int y)
 {
 	vector<int> new_opnenface = {};
@@ -631,71 +402,14 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 'y':
 		yRotate = !yRotate;
 		break;
-	case 'q':
-		glutLeaveMainLoop();
-		break;
-
-	case 'p': //ÏßÅÍ∞Å / ÏõêÍ∑ºÌà¨ÏòÅ
+	case 'p':
 		isortho = !isortho;
 		break;
 
-	case 't':
-		isCube = true;
-		Set_VAO();
-		animKey[0] = !animKey[0];
-		break;
-	case 'f':
-		isCube = true;
-		Set_VAO();
-		animKey[1] = !animKey[1];
-		break;
-	case 's':
-		isCube = true;
-		Set_VAO();
-		animKey[2] = !animKey[2];
-		break;
-	case 'b':
-		isCube = true;
-		Set_VAO();
-		animKey[3] = !animKey[3];
-		break;
-	case 'o':
-		isCube = false;
-		Set_VAO();
-		animKey[4] = !animKey[4];
-		break;
-	case 'r':
-		isCube = false;
-		Set_VAO();
-		if (!animKey[5])
-		{
-			animKey[5] = true;
-		}
-		anim5_face[face++] = true;
-		if (face == 4) face = 0;
-		break;
-	case 'C':
-		for (int i = 0; i < 6; i++)
-		{
-			translate_face[i] = glm::vec3(0.0f, 0.0f, 0.0f);
-			rotate_face[i] = glm::vec2(0.0f, 0.0f);
-			scale_face[i] = glm::vec3(1.0f, 1.0f, 1.0f);
-			animKey[i] = false;
-		}
 
-		trans_dir = { 1,0.01f,0.01f };
 
-		open_face = { 0,1,2,3,4,5 };
-		for (int i = 0; i < 4; i++)
-		{
-			tet_rot_dir[i] = 1;
-			anim5_face[i] = false;
-		}
-		world_y_rot = 30.0f;
-
-		face = 0;
-		isCube = true;
-
+	case 'q':
+		glutLeaveMainLoop();
 		break;
 	}
 	glutPostRedisplay();
@@ -703,14 +417,14 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 
 int main(int argc, char** argv)
 {
-	//ÏúàÎèÑÏö∞ ÏÉùÏÑ±
+	//¿©µµøÏ ª˝º∫
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(WIN_X, WIN_Y);
 	glutInitWindowSize(WIN_W, WIN_H);
 	glutCreateWindow("Example1");
 
-	//GLEW Ï¥àÍ∏∞ÌôîÌïòÍ∏∞
+	//GLEW √ ±‚»≠«œ±‚
 	glewExperimental = GL_TRUE;
 	if (glewInit() != GLEW_OK)
 	{
@@ -721,12 +435,12 @@ int main(int argc, char** argv)
 		std::cout << "GLEW Initialized\n";
 
 	if (!Make_Shader_Program()) {
-		cerr << "Error: Shader Program ÏÉùÏÑ± Ïã§Ìå®" << endl;
+		cerr << "Error: Shader Program ª˝º∫ Ω«∆–" << endl;
 		std::exit(EXIT_FAILURE);
 	}
 
 	if (!Set_VAO()) {
-		cerr << "Error: VAO ÏÉùÏÑ± Ïã§Ìå®" << endl;
+		cerr << "Error: VAO ª˝º∫ Ω«∆–" << endl;
 		std::exit(EXIT_FAILURE);
 	}
 	glutTimerFunc(10, TimerFunction1, 1);

@@ -15,19 +15,25 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="13.cpp">
+    <ClCompile Include="13f.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="14.cpp">
+    <ClCompile Include="14f.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="15.cpp">
+    <ClCompile Include="15f.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="16.cpp">
+    <ClCompile Include="16f.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="17.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="18.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="19.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
