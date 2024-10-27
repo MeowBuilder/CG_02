@@ -26,7 +26,6 @@ const int WIN_W = 800, WIN_H = 800;
 const glm::vec3 background_rgb = glm::vec3(0.0f, 0.0f, 0.0f);
 
 bool isCulling = true;
-bool yRotate = false;
 
 GLfloat mx = 0.0f;
 GLfloat my = 0.0f;
@@ -44,15 +43,29 @@ std::vector< glm::vec3 > vertices;
 std::vector< glm::vec2 > uvs;
 std::vector< glm::vec3 > normals;
 
-float world_y_rot = 30.0f;
+bool yRotate = false;
+bool xRotate = false;
+glm::vec3 world_rotate = { 30.0f,30.0f,0.0f };
 
 int face = 0;
 bool isCube = true;
 
 std::vector<bool> animKey(6, false);
 std::vector<bool> anim5_face(4, false);
-
 bool isortho = false;
+
+glm::vec3 trans_down_body = { 0.0f,0.0f,0.0f };
+glm::vec3 rotate_mid_body = { 0.0f,0.0f,0.0f };
+bool rotate_mid = false;
+float rotate_mid_seta = 1.0f;
+
+glm::vec3 rotate_barrel_body = { 0.0f,0.0f,0.0f };
+bool rotate_barrel = false;
+float rotate_barrel_seta = 1.0f;
+
+bool make_barrel_one = false;
+
+void set_body(int body_index, glm::mat4* TR);
 
 char* File_To_Buf(const char* file)
 {
@@ -312,6 +325,15 @@ bool Set_VAO() {
 	return true;
 }
 
+void world_trans(glm::mat4* TR) {
+	*TR = glm::rotate(*TR, glm::radians(world_rotate.x), glm::vec3(1.0, 0.0, 0.0));
+	*TR = glm::rotate(*TR, glm::radians(world_rotate.y), glm::vec3(0.0, 1.0, 0.0));
+}
+
+void translate_body(glm::mat4* TR) {
+
+}
+
 GLvoid drawScene()
 {
 	glClearColor(background_rgb.x, background_rgb.y, background_rgb.z, 1.0f);
@@ -351,7 +373,7 @@ GLvoid drawScene()
 	else
 	{
 		projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 50.0f);
-		projection = glm::translate(projection, glm::vec3(0.0, 0.0, -5.0));
+		projection = glm::translate(projection, glm::vec3(0.0, 0.0, -10.0));
 	}
 
 	unsigned int projectionLocation = glGetUniformLocation(shaderProgramID, "projectionTransform");
@@ -366,14 +388,108 @@ GLvoid drawScene()
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 
+	//ÁÂÇ¥Ãà±×¸®´Â ÆÄÆ®
 	glm::mat4 TR = glm::mat4(1.0f);
-	TR = glm::rotate(TR, glm::radians(30.0f), glm::vec3(1.0, 0.0, 0.0));
-	TR = glm::rotate(TR, glm::radians(30.0f), glm::vec3(0.0, 1.0, 0.0));
+	world_trans(&TR);
 	unsigned int modelLocation = glGetUniformLocation(shaderProgramID, "transform");
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
 	glDrawArrays(GL_LINES, 0, line.size() / 3);
 
+	//µµÇâ ±×¸®´Â ÆÄÆ®
+	glBindVertexArray(triangleVertexArrayObject);
+
+	//¹Ù´Ú
+	TR = glm::mat4(1.0f);
+	world_trans(&TR);
+	set_body(0, &TR);
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0);
+
+	//¾Æ·¡¸öÃ¼
+	TR = glm::mat4(1.0f);
+	world_trans(&TR);
+	set_body(1, &TR);
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0);
+
+	//À§¸öÃ¼
+	TR = glm::mat4(1.0f);
+	world_trans(&TR);
+	set_body(2, &TR);
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0);
+
+	//¿ÞÂÊÆ÷½Å
+	TR = glm::mat4(1.0f);
+	world_trans(&TR);
+	set_body(3, &TR);
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0);
+
+	//¿ÞÂÊÆ÷½Å
+	TR = glm::mat4(1.0f);
+	world_trans(&TR);
+	set_body(4, &TR);
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0);
+
+	//¿ÞÂÊÅ©·¹ÀÎ
+	TR = glm::mat4(1.0f);
+	world_trans(&TR);
+	set_body(5, &TR);
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0);
+
+	//¿ÞÂÊÅ©·¹ÀÎ
+	TR = glm::mat4(1.0f);
+	world_trans(&TR);
+	set_body(6, &TR);
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0);
+
 	glutSwapBuffers();
+}
+
+void set_body(int body_index,glm::mat4* TR) {
+	*TR = glm::translate(*TR, trans_down_body);
+	switch (body_index)
+	{
+	case 0://¹Ù´Ú
+		*TR = glm::translate(*TR, glm::vec3(0.0f, -0.5f, 0.0f));
+		*TR = glm::scale(*TR, glm::vec3(50.0f, 0.5f, 50.0f));
+		break;
+	case 1://¾Æ·¡¸öÃ¼
+		*TR = glm::translate(*TR, glm::vec3(0.0f, 0.0f, 0.0f));
+		*TR = glm::scale(*TR, glm::vec3(1.5f, 0.5f, 1.5f));
+		break;
+	case 2://À§¸öÃ¼
+		*TR = glm::rotate(*TR, glm::radians(rotate_mid_body.y), glm::vec3(0.0, 1.0, 0.0));
+		*TR = glm::translate(*TR, glm::vec3(0.0f, 0.375f, 0.0f));
+		*TR = glm::scale(*TR, glm::vec3(0.75f, 0.25f, 0.75f));
+		break;
+	case 3://¿ÞÂÊÆ÷½Å
+		*TR = glm::rotate(*TR, glm::radians(-rotate_barrel_body.y), glm::vec3(0.0, 1.0, 0.0));
+		*TR = glm::translate(*TR, glm::vec3(-0.5f, 0.0f, 1.0f));
+		*TR = glm::scale(*TR, glm::vec3(0.25, 0.1, 0.75f));
+		break;
+	case 4://¿À¸¥ÂÊÆ÷½Å
+		*TR = glm::rotate(*TR, glm::radians(rotate_barrel_body.y), glm::vec3(0.0, 1.0, 0.0));
+		*TR = glm::translate(*TR, glm::vec3(0.5f, 0.0f, 1.0f));
+		*TR = glm::scale(*TR, glm::vec3(0.25, 0.1, 0.75f));
+		break;
+	case 5://¿ÞÂÊÅ©·¹ÀÎ
+		*TR = glm::rotate(*TR, glm::radians(rotate_mid_body.y), glm::vec3(0.0, 1.0, 0.0));
+		*TR = glm::translate(*TR, glm::vec3(0.2f, 0.5f, 0.0f));
+		*TR = glm::scale(*TR, glm::vec3(0.15, 1.0, 0.15f));
+		break;
+	case 6://¿À¸¥ÂÊÅ©·¹ÀÎ
+		*TR = glm::rotate(*TR, glm::radians(rotate_mid_body.y), glm::vec3(0.0, 1.0, 0.0));
+		*TR = glm::translate(*TR, glm::vec3(-0.2f, 0.5f, 0.0f));
+		*TR = glm::scale(*TR, glm::vec3(0.15, 1.0, 0.15f));
+		break;
+	default:
+		break;
+	}
 }
 
 GLvoid Reshape(int w, int h)
@@ -384,14 +500,35 @@ GLvoid Reshape(int w, int h)
 GLvoid TimerFunction1(int value)
 {
 	glutPostRedisplay();
+	if (yRotate)
+	{
+		world_rotate.y += 0.5f;
+	}
+	if (xRotate)
+	{
+		world_rotate.x += 0.5f;
+	}
 
+	if (rotate_mid)
+	{
+		rotate_mid_body.y += rotate_mid_seta;
+	}
+	if (rotate_barrel)
+	{
+		rotate_barrel_body.y += rotate_barrel_seta;
+	}
 
+	if (make_barrel_one)
+	{
+		if (rotate_barrel_body.y != 0)
+		{
+			rotate_barrel_body.y -= rotate_barrel_seta;
+		}
+	}
 
 	glutTimerFunc(10, TimerFunction1, 1);
 }
 
-
-// 0:¾Æ·§¸é 1:µÞ ¿À ¾Õ ¿Þ ¼ø
 GLvoid Keyboard(unsigned char key, int x, int y)
 {
 	vector<int> new_opnenface = {};
@@ -405,8 +542,39 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 'p':
 		isortho = !isortho;
 		break;
+	case 'x':
+		xRotate = !xRotate;
+		break;
 
+	case 'b':
+		trans_down_body.x += 0.1f;
+		break;
+	case 'B':
+		trans_down_body.x -= 0.1f;
+		break;
+	case 'm':
+		rotate_mid = !rotate_mid;
+		rotate_mid_seta = 0.5f;
+		break;
+	case 'M':
+		rotate_mid = !rotate_mid;
+		rotate_mid_seta = -0.5f;
+		break;
+	case 'f':
+		rotate_barrel = !rotate_barrel;
+		rotate_barrel_seta = 0.5f;
+		break;
+	case 'F':
+		rotate_barrel = !rotate_barrel;
+		rotate_barrel_seta = -0.5f;
+		break;
 
+	case 'e':
+		make_barrel_one = !make_barrel_one;
+		break;
+	case 'E':
+
+		break;
 
 	case 'q':
 		glutLeaveMainLoop();
