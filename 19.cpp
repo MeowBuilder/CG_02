@@ -43,9 +43,9 @@ std::vector< glm::vec3 > vertices;
 std::vector< glm::vec2 > uvs;
 std::vector< glm::vec3 > normals;
 
-bool yRotate = false;
-bool xRotate = false;
-glm::vec3 world_rotate = { 30.0f,30.0f,0.0f };
+glm::vec3 world_rotate = { 0.0,0.0,0.0 };
+bool world_rotate_y = false;
+float world_y_seta = 0.5f;
 
 int face = 0;
 bool isCube = true;
@@ -63,7 +63,22 @@ glm::vec3 rotate_barrel_body = { 0.0f,0.0f,0.0f };
 bool rotate_barrel = false;
 float rotate_barrel_seta = 1.0f;
 
+float barrel_trans_mid = 0.5f;
 bool make_barrel_one = false;
+
+glm::vec3 rotate_arms = { 0.0f,0.0f,0.0f };
+bool rotate_arms_bool = false;
+float rotate_arm_seta = 0.5f;
+
+//카메라 zx
+glm::vec3 cameraPos = { -1.0f,1.0f,1.0f };
+glm::vec3 camera_rotate = { 0.0f,0.0f,0.0f };
+bool camera_rotate_y = false;
+float camera_y_seta = 0.5f;
+bool camera_rotate_all = false;
+
+glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
 void set_body(int body_index, glm::mat4* TR);
 
@@ -326,11 +341,6 @@ bool Set_VAO() {
 }
 
 void world_trans(glm::mat4* TR) {
-	*TR = glm::rotate(*TR, glm::radians(world_rotate.x), glm::vec3(1.0, 0.0, 0.0));
-	*TR = glm::rotate(*TR, glm::radians(world_rotate.y), glm::vec3(0.0, 1.0, 0.0));
-}
-
-void translate_body(glm::mat4* TR) {
 
 }
 
@@ -355,13 +365,13 @@ GLvoid drawScene()
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	glUseProgram(shaderProgramID);
+	glm::vec3 rotatedTarget = glm::vec3(glm::rotate(glm::mat4(1.0f), glm::radians(world_rotate.y), glm::vec3(0.0f, 1.0f, 0.0))* glm::vec4(cameraTarget - cameraPos, 1.0f)) + cameraPos;
 
 	glm::mat4 view = glm::mat4(1.0f);
-	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 1.0f);
-	glm::vec3 cameraDir = glm::vec3(0.0f, 0.0f, 0.0f);
-	glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-
-	view = glm::lookAt(cameraPos, cameraDir, cameraUp);
+	view = glm::lookAt(cameraPos, rotatedTarget, cameraUp);
+	view = glm::rotate(view, glm::radians(camera_rotate.x), glm::vec3(1.0, 0.0, 0.0));
+	view = glm::rotate(view, glm::radians(camera_rotate.y), glm::vec3(0.0, 1.0, 0.0));
+	view = glm::rotate(view, glm::radians(camera_rotate.z), glm::vec3(0.0, 0.0, 1.0));
 	unsigned viewLocation = glGetUniformLocation(shaderProgramID, "viewTransform");
 	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, &view[0][0]);
 
@@ -469,23 +479,25 @@ void set_body(int body_index,glm::mat4* TR) {
 		break;
 	case 3://왼쪽포신
 		*TR = glm::rotate(*TR, glm::radians(-rotate_barrel_body.y), glm::vec3(0.0, 1.0, 0.0));
-		*TR = glm::translate(*TR, glm::vec3(-0.5f, 0.0f, 1.0f));
+		*TR = glm::translate(*TR, glm::vec3(-barrel_trans_mid, 0.0f, 1.0f));
 		*TR = glm::scale(*TR, glm::vec3(0.25, 0.1, 0.75f));
 		break;
 	case 4://오른쪽포신
 		*TR = glm::rotate(*TR, glm::radians(rotate_barrel_body.y), glm::vec3(0.0, 1.0, 0.0));
-		*TR = glm::translate(*TR, glm::vec3(0.5f, 0.0f, 1.0f));
+		*TR = glm::translate(*TR, glm::vec3(barrel_trans_mid, 0.0f, 1.0f));
 		*TR = glm::scale(*TR, glm::vec3(0.25, 0.1, 0.75f));
 		break;
 	case 5://왼쪽크레인
 		*TR = glm::rotate(*TR, glm::radians(rotate_mid_body.y), glm::vec3(0.0, 1.0, 0.0));
 		*TR = glm::translate(*TR, glm::vec3(0.2f, 0.5f, 0.0f));
-		*TR = glm::scale(*TR, glm::vec3(0.15, 1.0, 0.15f));
+		*TR = glm::rotate(*TR, glm::radians(rotate_arms.z), glm::vec3(0.0, 0.0, 1.0));
+		*TR = glm::scale(*TR, glm::vec3(0.15, 0.5f, 0.15f));
 		break;
 	case 6://오른쪽크레인
 		*TR = glm::rotate(*TR, glm::radians(rotate_mid_body.y), glm::vec3(0.0, 1.0, 0.0));
 		*TR = glm::translate(*TR, glm::vec3(-0.2f, 0.5f, 0.0f));
-		*TR = glm::scale(*TR, glm::vec3(0.15, 1.0, 0.15f));
+		*TR = glm::rotate(*TR, glm::radians(-rotate_arms.z), glm::vec3(0.0, 0.0, 1.0));
+		*TR = glm::scale(*TR, glm::vec3(0.15, 0.5f, 0.15f));
 		break;
 	default:
 		break;
@@ -500,13 +512,18 @@ GLvoid Reshape(int w, int h)
 GLvoid TimerFunction1(int value)
 {
 	glutPostRedisplay();
-	if (yRotate)
+	if (camera_rotate_y)
 	{
-		world_rotate.y += 0.5f;
+		camera_rotate.y += camera_y_seta;
 	}
-	if (xRotate)
+	if (world_rotate_y)
 	{
-		world_rotate.x += 0.5f;
+		world_rotate.y += world_y_seta;
+	}
+	if (camera_rotate_all)
+	{
+		camera_rotate.x += camera_y_seta;
+		camera_rotate.z += camera_y_seta;
 	}
 
 	if (rotate_mid)
@@ -517,12 +534,39 @@ GLvoid TimerFunction1(int value)
 	{
 		rotate_barrel_body.y += rotate_barrel_seta;
 	}
+	if (rotate_arms_bool)
+	{
+		if (rotate_arms.z < 90.0f && rotate_arms.z > -90.0f)
+		{
+			rotate_arms.z += rotate_arm_seta;
+			if (rotate_arms.z >= 90.0f || rotate_arms.z <= -90.0f)
+				rotate_arms.z -= rotate_arm_seta;
+		}
+	}
 
 	if (make_barrel_one)
 	{
-		if (rotate_barrel_body.y != 0)
+		if (rotate_barrel_body.y < 0)
 		{
-			rotate_barrel_body.y -= rotate_barrel_seta;
+			rotate_barrel_body.y += 0.5f;
+		}
+		else if (rotate_barrel_body.y > 0)
+		{
+			rotate_barrel_body.y -= 0.5f;
+		}
+		else if (rotate_barrel_body.y == 0)
+		{
+			if (barrel_trans_mid > 0)
+			{
+				barrel_trans_mid -= 0.01f;
+			}
+		}
+	}
+	else
+	{
+		if (barrel_trans_mid < 0.5f)
+		{
+			barrel_trans_mid += 0.01f;
 		}
 	}
 
@@ -537,20 +581,51 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		isCulling = 1 - isCulling;
 		break;
 	case 'y':
-		yRotate = !yRotate;
+		world_rotate_y = !world_rotate_y;
+		world_y_seta = 0.5f;
+		break;
+	case 'Y':
+		world_rotate_y = !world_rotate_y;
+		world_y_seta = -0.5f;
+		break;
+	case 'r':
+		camera_rotate_y = !camera_rotate_y;
+		camera_y_seta = 0.5f;
+		break;
+	case 'R':
+		camera_rotate_y = !camera_rotate_y;
+		camera_y_seta = -0.5f;
+		break;
+	case 'a':
+		camera_rotate_all = !camera_rotate_all;
 		break;
 	case 'p':
 		isortho = !isortho;
 		break;
+	case 'z':
+		cameraPos.z += 0.1f;
+		break;
+	case 'Z':
+		cameraPos.z -= 0.1f;
+		break;
 	case 'x':
-		xRotate = !xRotate;
+		cameraPos.x += 0.1f;
+		break;
+	case 'X':
+		cameraPos.x -= 0.1f;
 		break;
 
 	case 'b':
-		trans_down_body.x += 0.1f;
+		if (trans_down_body.x < 10.0f && trans_down_body.x > -10.0f)
+		{
+			trans_down_body.x += 0.1f;
+		}
 		break;
 	case 'B':
-		trans_down_body.x -= 0.1f;
+		if (trans_down_body.x < 10.0f && trans_down_body.x > -10.0f)
+		{
+			trans_down_body.x += 0.1f;
+		}
 		break;
 	case 'm':
 		rotate_mid = !rotate_mid;
@@ -572,8 +647,13 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 'e':
 		make_barrel_one = !make_barrel_one;
 		break;
-	case 'E':
-
+	case 't':
+		rotate_arms_bool = !rotate_arms_bool;
+		rotate_arm_seta = 0.5f;
+		break;
+	case 'T':
+		rotate_arms_bool = !rotate_arms_bool;
+		rotate_arm_seta = -0.5f;
 		break;
 
 	case 'q':
