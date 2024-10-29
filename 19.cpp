@@ -47,11 +47,6 @@ glm::vec3 world_rotate = { 0.0,0.0,0.0 };
 bool world_rotate_y = false;
 float world_y_seta = 0.5f;
 
-int face = 0;
-bool isCube = true;
-
-std::vector<bool> animKey(6, false);
-std::vector<bool> anim5_face(4, false);
 bool isortho = false;
 
 glm::vec3 trans_down_body = { 0.0f,0.0f,0.0f };
@@ -655,7 +650,45 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		rotate_arms_bool = !rotate_arms_bool;
 		rotate_arm_seta = -0.5f;
 		break;
+	case 's':
+		camera_rotate_y = false;
+		world_rotate_y = false;
+		camera_rotate_all = false;
+		rotate_mid = false;
+		rotate_barrel = false;
+		rotate_arms_bool = false;
+		make_barrel_one = false;
+		break;
+	case 'c':
+		world_rotate = { 0.0,0.0,0.0 };
+		world_rotate_y = false;
+		isortho = false;
 
+		trans_down_body = { 0.0f,0.0f,0.0f };
+		rotate_mid_body = { 0.0f,0.0f,0.0f };
+		rotate_mid = false;
+		rotate_mid_seta = 1.0f;
+
+		rotate_barrel_body = { 0.0f,0.0f,0.0f };
+		rotate_barrel = false;
+		rotate_barrel_seta = 1.0f;
+
+		barrel_trans_mid = 0.5f;
+		make_barrel_one = false;
+
+		rotate_arms = { 0.0f,0.0f,0.0f };
+		rotate_arms_bool = false;
+		rotate_arm_seta = 0.5f;
+
+		cameraPos = { -1.0f,1.0f,1.0f };
+		camera_rotate = { 0.0f,0.0f,0.0f };
+		camera_rotate_y = false;
+		camera_y_seta = 0.5f;
+		camera_rotate_all = false;
+
+		cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
+		cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+		break;
 	case 'q':
 		glutLeaveMainLoop();
 		break;

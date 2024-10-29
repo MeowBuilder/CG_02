@@ -695,7 +695,6 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 
 		face = 0;
 		isCube = true;
-
 		break;
 	}
 	glutPostRedisplay();
