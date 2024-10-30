@@ -27,13 +27,19 @@
     <ClCompile Include="16f.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="17.cpp">
+    <ClCompile Include="17f.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="18.cpp">
+    <ClCompile Include="18f.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="19.cpp">
+    <ClCompile Include="19f.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="20f.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="21.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -53,6 +59,9 @@
       <Filter>리소스 파일</Filter>
     </Object>
     <Object Include="tetrahedron.obj">
+      <Filter>리소스 파일</Filter>
+    </Object>
+    <Object Include="cube_reverse.obj">
       <Filter>리소스 파일</Filter>
     </Object>
   </ItemGroup>

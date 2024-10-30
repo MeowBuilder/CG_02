@@ -7,8 +7,7 @@ uniform mat4 projectionTransform;
 
 layout (location = 0) in vec3 positionAttribute;
 
-//uniform vec3 colorAttribute;
-in vec3 colorAttribute;
+uniform vec3 colorAttribute;
 out vec3 passColorAttribute;
 
 void main()

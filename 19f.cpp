@@ -484,14 +484,16 @@ void set_body(int body_index,glm::mat4* TR) {
 		break;
 	case 5://왼쪽크레인
 		*TR = glm::rotate(*TR, glm::radians(rotate_mid_body.y), glm::vec3(0.0, 1.0, 0.0));
-		*TR = glm::translate(*TR, glm::vec3(0.2f, 0.5f, 0.0f));
+		*TR = glm::translate(*TR, glm::vec3(0.2f, 0.25f, 0.0f));
 		*TR = glm::rotate(*TR, glm::radians(rotate_arms.z), glm::vec3(0.0, 0.0, 1.0));
+		*TR = glm::translate(*TR, glm::vec3(0.0f, 0.25f, 0.0f));
 		*TR = glm::scale(*TR, glm::vec3(0.15, 0.5f, 0.15f));
 		break;
 	case 6://오른쪽크레인
 		*TR = glm::rotate(*TR, glm::radians(rotate_mid_body.y), glm::vec3(0.0, 1.0, 0.0));
-		*TR = glm::translate(*TR, glm::vec3(-0.2f, 0.5f, 0.0f));
+		*TR = glm::translate(*TR, glm::vec3(-0.2f, 0.25f, 0.0f));
 		*TR = glm::rotate(*TR, glm::radians(-rotate_arms.z), glm::vec3(0.0, 0.0, 1.0));
+		*TR = glm::translate(*TR, glm::vec3(0.0f, 0.25f, 0.0f));
 		*TR = glm::scale(*TR, glm::vec3(0.15, 0.5f, 0.15f));
 		break;
 	default:
@@ -619,7 +621,7 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 'B':
 		if (trans_down_body.x < 10.0f && trans_down_body.x > -10.0f)
 		{
-			trans_down_body.x += 0.1f;
+			trans_down_body.x -= 0.1f;
 		}
 		break;
 	case 'm':
