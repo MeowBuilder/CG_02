@@ -17,13 +17,25 @@ using namespace std;
 random_device seeder;
 const auto seed = seeder.entropy() ? seeder() : time(nullptr);
 mt19937 eng(static_cast<mt19937::result_type>(seed));
-uniform_int_distribution<int> rand_cube(0, 5);
-uniform_int_distribution<int> rand_tet(0, 3);
 
 const int WIN_X = 10, WIN_Y = 10;
 const int WIN_W = 800, WIN_H = 800;
 
 const glm::vec3 background_rgb = glm::vec3(0.0f, 0.0f, 0.0f);
+const std::vector<glm::vec3> colors = {
+	{1.0, 0.0, 0.0},
+	{0.0, 1.0, 0.0},
+	{0.0, 0.0, 1.0},
+	{1.0, 1.0, 0.0},
+	{1.0, 0.0, 1.0},
+	{0.0, 1.0, 1.0},
+
+	{0,0,0.501961},
+	{0.098039, 0.098039, 0.439216},
+	{0.282353, 0.239216, 0.545098},
+};
+
+const glm::vec3 Box_border = { 10.0,10.0,10.0 };
 
 bool isCulling = true;
 bool is_reverse = true;
@@ -55,7 +67,23 @@ glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
 bool isopen = false;
 
-glm::vec3 Door_trans = { 0.0,0.0,0.0 };
+glm::vec3 Door_trans = { 5.0,0.0,0.0 };
+
+//·Îº¿ °ü·Ã º¤ÅÍ
+glm::vec3 robot_translate = { 0.0,0.0,0.0 };
+glm::vec3 robot_speed = { 0.05,0,0.05 };
+float speed_ = 0.05f;
+
+glm::vec3 robot_rotation = { 0.0,90.0,0.0 };
+
+float rotate_seta = 2.0f;
+glm::vec3 arm_rotate = { 0,0,0 };
+float arm_rotate_seta = 2.0f;
+glm::vec3 leg_rotate = { 0,0,0 };
+float leg_rotate_seta = 2.0f;
+
+//Àå¾Ö¹° °ü·Ã º¤ÅÍ
+
 
 void set_body(int body_index, glm::mat4* TR);
 void set_cube(int face_index, glm::mat4* TR);
@@ -248,13 +276,7 @@ bool Set_VAO() {
 	return true;
 }
 
-void open() {
-
-}
-
 void Viewport1() {
-	glViewport(0, 0, WIN_W, WIN_H);
-
 	vector<float> line = {
 		-10.0f, 0.0f, 0.0f, 1.0f,0.0f,0.0f,
 		10.0f, 0.0f, 0.0f, 1.0f,0.0f,0.0f,
@@ -296,13 +318,18 @@ void Viewport1() {
 		TR = glm::mat4(1.0f);
 		set_cube(face_index, &TR);
 		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
-		glUniform3f(colorLocation, 0.1 * face_index, 0.2 * face_index, 0.3 * face_index);
+		if (face_index == 6)
+			glUniform3f(colorLocation, colors[face_index-1].x, colors[face_index-1].y, colors[face_index-1].z);
+		else
+			glUniform3f(colorLocation, colors[face_index].x, colors[face_index].y, colors[face_index].z);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * 6 * face_index));
 	}
 
 	// µÚÁýÈù Å¥ºêÀÇ Á¤»óÈ­
 	glBindVertexArray(triangleVertexArrayObject);
 
+
+	glUniform3f(colorLocation, colors[6].x, colors[6].y, colors[6].z);
 	// ¸öÅë
 	TR = glm::mat4(1.0f);
 	set_body(0, &TR);
@@ -315,7 +342,15 @@ void Viewport1() {
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0);
 
+	glUniform3f(colorLocation, colors[1].x, colors[1].y, colors[1].z);
+	//ÄÚ
+	TR = glm::mat4(1.0f);
+	set_body(6, &TR);
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0);
 
+
+	glUniform3f(colorLocation, colors[7].x, colors[7].y, colors[7].z);
 	//´Ù¸®
 	TR = glm::mat4(1.0f);
 	set_body(2, &TR);
@@ -324,6 +359,19 @@ void Viewport1() {
 
 	TR = glm::mat4(1.0f);
 	set_body(3, &TR);
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0);
+
+
+	glUniform3f(colorLocation, colors[8].x, colors[8].y, colors[8].z);
+	//ÆÈ
+	TR = glm::mat4(1.0f);
+	set_body(4, &TR);
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0);
+
+	TR = glm::mat4(1.0f);
+	set_body(5, &TR);
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0);
 }
@@ -345,27 +393,27 @@ void set_cube(int body_index, glm::mat4* TR) {
 	switch (body_index)
 	{
 	case 0://µÞ¸é
-		*TR = glm::scale(*TR, glm::vec3(10, 10, 10));
+		*TR = glm::scale(*TR, Box_border);
 		break;
 	case 1://¿·¸é
-		*TR = glm::scale(*TR, glm::vec3(10, 10, 10));
+		*TR = glm::scale(*TR, Box_border);
 		break;
 	case 2://À­¸é
-		*TR = glm::scale(*TR, glm::vec3(10, 10, 10));
+		*TR = glm::scale(*TR, Box_border);
 		break;
 	case 3://¿·¸é
-		*TR = glm::scale(*TR, glm::vec3(10, 10, 10));
+		*TR = glm::scale(*TR, Box_border);
 		break;
 	case 4://¾Æ·§¸é
-		*TR = glm::scale(*TR, glm::vec3(10, 10, 10));
+		*TR = glm::scale(*TR, Box_border);
 		break;
 	case 5://¾Õ¸é¿ÞÂÊ
 		*TR = glm::translate(*TR, -Door_trans);
-		*TR = glm::scale(*TR, glm::vec3(10, 10, 10));
+		*TR = glm::scale(*TR, Box_border);
 		break;
 	case 6://¾Õ¸é¿À¸¥ÂÊ
 		*TR = glm::translate(*TR, Door_trans);
-		*TR = glm::scale(*TR, glm::vec3(10, 10, 10));
+		*TR = glm::scale(*TR, Box_border);
 		break;
 		break;
 	default:
@@ -374,30 +422,67 @@ void set_cube(int body_index, glm::mat4* TR) {
 }
 
 void set_body(int body_index, glm::mat4* TR) {
+	//·Îº¿ ÀÚÃ¼ÀÇ ÀÌµ¿
+	*TR = glm::translate(*TR, robot_translate);
+	*TR = glm::rotate(*TR, glm::radians(robot_rotation.x), glm::vec3(1.0, 0.0, 0.0));
+	*TR = glm::rotate(*TR, glm::radians(robot_rotation.z), glm::vec3(0.0, 0.0, 1.0));
+	*TR = glm::rotate(*TR, robot_rotation.y, glm::vec3(0.0, 1.0, 0.0));
+
 	switch (body_index)
 	{
 	case 0://¸öÅë
 		*TR = glm::translate(*TR, glm::vec3(0.0f, 0.0f, 0.0f));
+
 		*TR = glm::scale(*TR, glm::vec3(1, 1.5, 1));
 		break;
 	case 1://¸Ó¸®
 		*TR = glm::translate(*TR, glm::vec3(0.0f, 1.0f, 0.0f));
+
 		*TR = glm::scale(*TR, glm::vec3(0.5, 0.5, 0.5));
 		break;
 
 	case 2://¿Þ´Ù¸®
-		*TR = glm::translate(*TR, glm::vec3(-0.25f, -1.0f, 0.0f));
+		*TR = glm::translate(*TR, glm::vec3(-0.25f, -0.75f, 0.0f));
+
+		*TR = glm::rotate(*TR, glm::radians(leg_rotate.x), glm::vec3(1.0, 0.0, 0.0));
+		*TR = glm::translate(*TR, glm::vec3(0.0, -0.5f, 0.0f));
 		*TR = glm::scale(*TR, glm::vec3(0.25, 1.0, 0.25));
 		break;
 	case 3://¿À¸¥´Ù¸®
-		*TR = glm::translate(*TR, glm::vec3(0.25f, -1.0f, 0.0f));
+		*TR = glm::translate(*TR, glm::vec3(0.25f, -0.75f, 0.0f));
+
+		*TR = glm::rotate(*TR, glm::radians(-leg_rotate.x), glm::vec3(1.0, 0.0, 0.0));
+		*TR = glm::translate(*TR, glm::vec3(0.0, -0.5f, 0.0f));
 		*TR = glm::scale(*TR, glm::vec3(0.25, 1.0, 0.25));
 		break;
+
+	case 4://¿ÞÆÈ
+		*TR = glm::translate(*TR, glm::vec3(-0.625f, 0.5f, 0.0f));
+
+		*TR = glm::rotate(*TR, glm::radians(-arm_rotate.x), glm::vec3(1.0, 0.0, 0.0));
+		*TR = glm::translate(*TR, glm::vec3(0.0, -0.5f, 0.0f));
+		*TR = glm::scale(*TR, glm::vec3(0.25, 1.0, 0.25));
+		break;
+	case 5://¿ÀÆÈ
+		*TR = glm::translate(*TR, glm::vec3(0.625f, 0.5f, 0.0f));
+		//ÀÌ°÷¿¡ È¸Àü°ü·Ã
+		*TR = glm::rotate(*TR, glm::radians(arm_rotate.x), glm::vec3(1.0, 0.0, 0.0));
+		*TR = glm::translate(*TR, glm::vec3(0.0, -0.5f, 0.0f));
+		*TR = glm::scale(*TR, glm::vec3(0.25, 1.0, 0.25));
+		break;
+	case 6://ÄÚ
+		*TR = glm::translate(*TR, glm::vec3(0.0f, 0.95f, 0.35f));
+
+		*TR = glm::scale(*TR, glm::vec3(0.15, 0.15, 0.15));
+		break;
 	}
+
+
 }
 
 GLvoid Reshape(int w, int h)
 {
+	glViewport(0, 0, WIN_W, WIN_H);
 }
 
 GLvoid TimerFunction1(int value)
@@ -416,6 +501,57 @@ GLvoid TimerFunction1(int value)
 			Door_trans.x += 0.1f;
 		}
 	}
+
+	if (robot_translate.y >= (-Box_border.y/2) + 1.57f)
+	{
+		robot_translate.y += robot_speed.y;
+
+		if (robot_speed.y > -9.8) robot_speed.y -= 0.098f;
+
+		if (robot_translate.y <= (-Box_border.y / 2) + 1.57f)
+		{
+			robot_translate.y = (-Box_border.y / 2) + 1.58f;
+		}
+
+		if (robot_translate.y >= (Box_border.y / 2) - 1.5f)
+		{
+			robot_translate.y = (Box_border.y / 2) - 1.5f;
+		}
+	} 
+	
+	robot_translate.x += robot_speed.x;
+	if (robot_translate.x >= 5.0f) {
+		robot_speed.x = -speed_;
+		robot_translate.x = 4.9f;
+	}
+	else if (robot_translate.x <= -5.0f) {
+		robot_speed.x = speed_;
+		robot_translate.x = -4.9f;
+	}
+
+	robot_translate.z += robot_speed.z;
+	if (robot_translate.z >= 5.0f) {
+		robot_speed.z = -speed_;
+		robot_translate.z = 4.9f;
+	}
+	else if (robot_translate.z <= -5.0f) {
+		robot_speed.z = speed_;
+		robot_translate.z = -4.9f;
+	}
+
+	robot_rotation.y = atan2(robot_speed.x, robot_speed.z);
+
+	arm_rotate.x += arm_rotate_seta;
+	if (arm_rotate.x < -60.0f)
+		arm_rotate_seta = rotate_seta;
+	else if (arm_rotate.x > 60.0f)
+		arm_rotate_seta = -rotate_seta;
+
+	leg_rotate.x += leg_rotate_seta;
+	if (leg_rotate.x < -60.0f)
+		leg_rotate_seta = rotate_seta;
+	else if (leg_rotate.x > 60.0f)
+		leg_rotate_seta = -rotate_seta;
 
 	glutTimerFunc(10, TimerFunction1, 1);
 }
@@ -447,10 +583,74 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 'X':
 		cameraPos.x -= 0.1f;
 		break;
+		
+	case '+':
+		speed_ += 0.01f;
+		arm_rotate_seta = abs(arm_rotate_seta) + 1.0f;
+		leg_rotate_seta = abs(leg_rotate_seta) + 1.0f;
+		break;
+	case '-':
+		speed_ -= 0.01f;
+		arm_rotate_seta = abs(abs(arm_rotate_seta) - 1.0f);
+		leg_rotate_seta = abs(abs(leg_rotate_seta) - 1.0f);
+		break;
+	case 'j':
+		robot_speed.y = 0.8f;
+		break;
+
+	case 'w':
+		robot_speed.z = 0.05f;
+		robot_speed.x = 0;
+		break;
+	case 'a':
+		robot_speed.x = -0.05f;
+		robot_speed.z = 0;
+		break;
+	case 's':
+		robot_speed.z = -0.05f;
+		robot_speed.x = 0;
+		break;
+	case 'd':
+		robot_speed.x = 0.05f;
+		robot_speed.z = 0;
+		break;
+	case 'i':
+		cameraPos = { 0.0f,0.0f,15.0f };
+		camera_rotate = { 0.0f,0.0f,0.0f };
+		camera_rotate_y = false;
+
+		isopen = false;
+
+		Door_trans = { 5.0,0.0,0.0 };
+
+		robot_translate = { 0.0,0.0,0.0 };
+		robot_speed = { 0.05,0,0.05 };
+		speed_ = 0.05f;
+
+		robot_rotation = { 0.0,90.0,0.0 };
+
+
+		rotate_seta = 2.0f;
+		arm_rotate = { 0,0,0 };
+		arm_rotate_seta = 2.0f;
+		leg_rotate = { 0,0,0 };
+		leg_rotate_seta = 2.0f;
+		break;
 	case 'q':
 		glutLeaveMainLoop();
 		break;
 	}
+	glutPostRedisplay();
+}
+
+void Mouse(int x, int y)
+{
+	GLfloat half_w = WIN_W / 2.0f;
+	mx = (x - half_w) / half_w;
+	my = (half_w - y) / half_w;
+
+	robot_speed.z = (-my)/10;
+	robot_speed.x = (mx)/10;
 	glutPostRedisplay();
 }
 
@@ -492,5 +692,7 @@ int main(int argc, char** argv)
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
 	glutKeyboardFunc(Keyboard);
+	//glutMouseFunc(Mouse);
+	glutMotionFunc(Mouse);
 	glutMainLoop();
 }
