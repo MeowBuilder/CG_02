@@ -42,6 +42,12 @@
     <ClCompile Include="21.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="22.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="소스.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="fragment.glsl">
@@ -62,6 +68,9 @@
       <Filter>리소스 파일</Filter>
     </Object>
     <Object Include="cube_reverse.obj">
+      <Filter>리소스 파일</Filter>
+    </Object>
+    <Object Include="cube_reversefor22.obj">
       <Filter>리소스 파일</Filter>
     </Object>
   </ItemGroup>
