@@ -67,10 +67,15 @@ float camera_y_seta = 0.5f;
 glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
+glm::mat4 boxRotationMatrix = glm::mat4(1.0f);
+glm::vec3 box_rotation(0,0,45);
+
 //장애물 관련 벡터
 std::vector<glm::vec3> Block_location = { {},{},{} };
+std::vector<glm::vec3> Block_velocity = { {},{},{} };
 std::vector<glm::vec3> Block_scale = { {3,3,3},{2,2,2},{1,1,1} };
 glm::vec3 Block_Color = { 0.1,0.3,1.0 };
+glm::vec3 gravity = { 0,-0.009,0 };
 
 //공 관련 변수들
 std::vector<glm::vec3> Ball_location = {};
@@ -79,6 +84,19 @@ glm::vec3 Ball_Color = { 0.1,1.0,0.3 };
 
 bool is_on = false;
 int on_index = -1;
+
+bool clicked = false;
+
+class Ball
+{
+public:
+	void Draw() {
+		
+	}
+
+private:
+	glm::vec3 b_location = { 0,0,0 };
+};
 
 void set_cube(int face_index, glm::mat4* TR);
 void set_block(int block_index, glm::mat4* TR);
@@ -349,6 +367,7 @@ GLvoid drawScene()
 }
 
 void set_cube(int body_index, glm::mat4* TR) {
+	*TR = glm::rotate(*TR, (box_rotation.z), glm::vec3(0, 0, 1));
 	switch (body_index)
 	{
 	case 0://뒷면
@@ -380,6 +399,7 @@ void set_cube(int body_index, glm::mat4* TR) {
 
 void set_block(int block_index, glm::mat4* TR) {
 	*TR = glm::translate(*TR, Block_location[block_index]);
+	*TR = glm::rotate(*TR, (box_rotation.z), glm::vec3(0, 0, 1));
 	*TR = glm::scale(*TR, Block_scale[block_index]);
 }
 
@@ -389,7 +409,7 @@ void make_block() {
 	{
 		Block_location[i].x = x_location;
 		Block_location[i].z = -3 + (i * 1.5);
-		Block_location[i].y = (Block_scale[i].y / 2) - (Box_border.y / 2);
+		Block_location[i].y = (Block_scale[i].y / 2) - (Box_border.y / 2) + 5.0f;
 	}
 }
 
@@ -398,23 +418,45 @@ GLvoid Reshape(int w, int h)
 	glViewport(0, 0, WIN_W, WIN_H);
 }
 
-bool is_onBlock(glm::vec3 robot_position, int block_index) {
-	float distance = glm::distance(robot_position, glm::vec3(Block_location[block_index].x, 0, Block_location[block_index].z));
-	return distance <= 1.0f;
-}
-
 GLvoid TimerFunction1(int value)
 {
+	boxRotationMatrix = glm::mat4(1.0f);
+	boxRotationMatrix = glm::rotate(boxRotationMatrix, (box_rotation.z), glm::vec3(0, 0, 1));
+
 	glutPostRedisplay();
 
-	if (camera_rotate_y)
-	{
+	if (camera_rotate_y) {
 		camera_rotate.y += camera_y_seta;
 	}
 
-	for (int i = 0; i < 3; i++)
-	{
-		
+	for (int i = 0; i < Block_location.size(); i++) {
+		Block_velocity[i] += gravity * 0.16f;
+		Block_location[i] += Block_velocity[i] * 0.16f;
+
+		glm::vec4 localPos = glm::inverse(boxRotationMatrix) * glm::vec4(Block_location[i], 1.0f);
+
+		if (localPos.x + Block_scale[i].x / 2 > Box_border.x / 2) {
+			localPos.x = Box_border.x / 2 - Block_scale[i].x / 2;
+		}
+		else if (localPos.x - Block_scale[i].x / 2 < -Box_border.x / 2) {
+			localPos.x = -Box_border.x / 2 + Block_scale[i].x / 2;
+		}
+
+		if (localPos.y + Block_scale[i].y / 2 > Box_border.y / 2) {
+			localPos.y = Box_border.y / 2 - Block_scale[i].y / 2;
+		}
+		else if (localPos.y - Block_scale[i].y / 2 < -Box_border.y / 2) {
+			localPos.y = -Box_border.y / 2 + Block_scale[i].y / 2;
+		}
+
+		if (localPos.z + Block_scale[i].z / 2 > Box_border.z / 2) {
+			localPos.z = Box_border.z / 2 - Block_scale[i].z / 2;
+		}
+		else if (localPos.z - Block_scale[i].z / 2 < -Box_border.z / 2) {
+			localPos.z = -Box_border.z / 2 + Block_scale[i].z / 2;
+		}
+
+		Block_location[i] = glm::vec3(boxRotationMatrix * localPos);
 	}
 
 	glutTimerFunc(10, TimerFunction1, 1);
@@ -426,11 +468,11 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	switch (key) {
 	case 'y':
 		camera_rotate_y = !camera_rotate_y;
-		camera_y_seta = 0.1f;
+		camera_y_seta = 1.0f;
 		break;
 	case 'Y':
 		camera_rotate_y = !camera_rotate_y;
-		camera_y_seta = -0.1f;
+		camera_y_seta = -1.0f;
 		break;
 	case 'z':
 		cameraPos.z -= 0.1f;
@@ -444,7 +486,9 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 'X':
 		cameraPos.x -= 0.1f;
 		break;
+	case 'b':
 
+		break;
 	case 'q':
 		glutLeaveMainLoop();
 		break;
@@ -454,10 +498,25 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 
 void Mouse(int button, int state, int x, int y)
 {
-	GLfloat half_w = WIN_W / 2.0f;
 	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+		clicked = true;
+
+	}
+	else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP)
+	{
+		clicked = false;
+	}
+
+	glutPostRedisplay();
+}
+
+void Motion(int x, int y)
+{
+	GLfloat half_w = WIN_W / 2.0f;
+	if (clicked) {
 		mx = (x - half_w) / half_w;
 		my = (half_w - y) / half_w;
+		box_rotation.z = glm::atan(my / mx);
 	}
 
 	glutPostRedisplay();
@@ -496,6 +555,7 @@ int main(int argc, char** argv)
 		cerr << "Error: VAO 생성 실패" << endl;
 		std::exit(EXIT_FAILURE);
 	}
+
 	glutTimerFunc(10, TimerFunction1, 1);
 
 	make_block();
@@ -504,5 +564,6 @@ int main(int argc, char** argv)
 	glutReshapeFunc(Reshape);
 	glutKeyboardFunc(Keyboard);
 	glutMouseFunc(Mouse);
+	glutMotionFunc(Motion);
 	glutMainLoop();
 }
