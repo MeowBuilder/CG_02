@@ -19,6 +19,7 @@ const auto seed = seeder.entropy() ? seeder() : time(nullptr);
 mt19937 eng(static_cast<mt19937::result_type>(seed));
 uniform_real_distribution<float> rand_location(-4, 4);
 uniform_real_distribution<float> rand_size(0.5, 2.5);
+uniform_real_distribution<float> rand_speed(-2, 2);
 
 const int WIN_X = 10, WIN_Y = 10;
 const int WIN_W = 800, WIN_H = 800;
@@ -67,32 +68,86 @@ float camera_y_seta = 0.5f;
 glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
-bool isopen = false;
-
-glm::vec3 Door_trans = { 5.0,0.0,0.0 };
-
-//로봇 관련 벡터
-glm::vec3 robot_translate = { 0.0,0.0,0.0 };
-glm::vec3 robot_speed = { 0.05,0,0.05 };
-float speed_ = 0.05f;
-
-glm::vec3 robot_rotation = { 0.0,90.0,0.0 };
-
-float rotate_seta = 2.0f;
-glm::vec3 arm_rotate = { 0,0,0 };
-float arm_rotate_seta = 2.0f;
-glm::vec3 leg_rotate = { 0,0,0 };
-float leg_rotate_seta = 2.0f;
+glm::mat4 boxRotationMatrix = glm::mat4(1.0f);
+glm::vec3 box_rotation(0,0,0);
 
 //장애물 관련 벡터
 std::vector<glm::vec3> Block_location = { {},{},{} };
-std::vector<glm::vec3> Block_scale = { {0.1,0.1,0.1},{0.1,0.1,0.1},{0.1,0.1,0.1} };
-glm::vec3 Block_Color = { 0.2,0.5,0.8 };
+std::vector<glm::vec3> Block_velocity = { {},{},{} };
+std::vector<glm::vec3> Block_scale = { {3,3,3},{2,2,2},{1,1,1} };
+glm::vec3 Block_Color = { 0.1,0.3,1.0 };
+glm::vec3 gravity = { 0,-0.09,0 };
 
-bool is_on = false;
-int on_index = -1;
+//공 관련 변수들
+std::vector<glm::vec3> Ball_location = {};
+std::vector<glm::vec3> Ball_velocity = {};
+glm::vec3 Ball_Color = { 0.1,1.0,0.3 };
 
-void set_body(int body_index, glm::mat4* TR);
+bool clicked = false;
+bool open = false;
+
+class Ball
+{
+public:
+	Ball() {
+		ball = gluNewQuadric();
+		gluQuadricNormals(ball, GLU_SMOOTH);
+		gluQuadricOrientation(ball, GLU_OUTSIDE);
+
+		b_velocity = glm::vec3(rand_speed(eng), rand_speed(eng), rand_speed(eng));
+	}
+
+	void Draw() {
+		glm::mat4 TR = glm::mat4(1.0f);
+
+		TR = glm::translate(TR, b_location);
+		unsigned modelLocation = glGetUniformLocation(shaderProgramID, "transform");
+		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
+
+
+		modelLocation = glGetUniformLocation(shaderProgramID, "colorAttribute");
+		glUniform3f(modelLocation, 0,0,0);
+		gluSphere(ball, 0.5, 20, 20);
+	}
+	
+	void Update() {
+		if (open)
+		{
+			b_velocity += gravity * 0.16f;
+		}
+		b_location += b_velocity * 0.16f;
+
+		if (b_location.x + 0.5 > Box_border.x / 2) {
+			b_velocity.x = -b_velocity.x;
+		}
+		else if (b_location.x - 0.5 < -Box_border.x / 2) {
+			b_velocity.x = -b_velocity.x;
+		}
+
+		if (b_location.y + 0.5 > Box_border.y / 2) {
+			b_velocity.y = -b_velocity.y;
+		}
+		else if ((b_location.y - 0.5 < -Box_border.y / 2) && !open) {
+			b_velocity.y = -b_velocity.y;
+		}
+
+		if (b_location.z + 0.5 > Box_border.z / 2) {
+			b_velocity.z = -b_velocity.z;
+		}
+		else if (b_location.z - 0.5 < -Box_border.z / 2) {
+			b_velocity.z = -b_velocity.z;
+		}
+
+	}
+	
+private:
+	glm::vec3 b_location = { 0,0,0 };
+	glm::vec3 b_velocity = { 0,0,0 };
+	GLUquadricObj* ball;
+};
+
+std::vector<Ball> balls;
+
 void set_cube(int face_index, glm::mat4* TR);
 void set_block(int block_index, glm::mat4* TR);
 
@@ -235,7 +290,7 @@ bool Make_Shader_Program() {
 bool Set_VAO() {
 	//삼각형을 구성하는 vertex 데이터 - position과 color
 
-	is_reverse ? Load_Object("cube_reverse.obj") : Load_Object("cube.obj");
+	is_reverse ? Load_Object("cube_reversefor22.obj") : Load_Object("cube.obj");
 
 	if (is_reverse)
 	{
@@ -327,7 +382,7 @@ void Viewport1() {
 		set_cube(face_index, &TR);
 		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
 		if (face_index == 6)
-			glUniform3f(colorLocation, colors[face_index-1].x, colors[face_index-1].y, colors[face_index-1].z);
+			glUniform3f(colorLocation, colors[face_index - 1].x, colors[face_index - 1].y, colors[face_index - 1].z);
 		else
 			glUniform3f(colorLocation, colors[face_index].x, colors[face_index].y, colors[face_index].z);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * 6 * face_index));
@@ -337,70 +392,27 @@ void Viewport1() {
 	glBindVertexArray(triangleVertexArrayObject);
 
 
-	glUniform3f(colorLocation, colors[6].x, colors[6].y, colors[6].z);
-	// 몸통
-	TR = glm::mat4(1.0f);
-	set_body(0, &TR);
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
-	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0);
-
-	// 머리
-	TR = glm::mat4(1.0f);
-	set_body(1, &TR);
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
-	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0);
-
-	glUniform3f(colorLocation, colors[1].x, colors[1].y, colors[1].z);
-	//코
-	TR = glm::mat4(1.0f);
-	set_body(6, &TR);
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
-	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0);
-
-
-	glUniform3f(colorLocation, colors[7].x, colors[7].y, colors[7].z);
-	//다리
-	TR = glm::mat4(1.0f);
-	set_body(2, &TR);
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
-	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0);
-
-	TR = glm::mat4(1.0f);
-	set_body(3, &TR);
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
-	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0);
-
-
-	glUniform3f(colorLocation, colors[8].x, colors[8].y, colors[8].z);
-	//팔
-	TR = glm::mat4(1.0f);
-	set_body(4, &TR);
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
-	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0);
-
-	TR = glm::mat4(1.0f);
-	set_body(5, &TR);
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
-	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0);
-
+	glUniform3f(colorLocation, Block_Color.x, Block_Color.y, Block_Color.z);
 	for (int i = 0; i < 3; i++)
 	{
-		//glUniform3f(colorLocation, Block_Color.x, Block_Color.y, Block_Color.z);
-		glUniform3f(colorLocation, colors[i].x, colors[i].y, colors[i].z);
 		TR = glm::mat4(1.0f);
 		set_block(i, &TR);
 		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
 		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0);
 	}
 
+	for (int i = 0; i < balls.size(); i++)
+	{
+		balls[i].Draw();
+	}
 }
 
 GLvoid drawScene()
 {
 	glClearColor(background_rgb.x, background_rgb.y, background_rgb.z, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	isCulling ? glEnable(GL_DEPTH_TEST) : glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	Viewport1();
@@ -409,6 +421,7 @@ GLvoid drawScene()
 }
 
 void set_cube(int body_index, glm::mat4* TR) {
+	*TR = glm::rotate(*TR, (box_rotation.z), glm::vec3(0, 0, 1));
 	switch (body_index)
 	{
 	case 0://뒷면
@@ -424,14 +437,19 @@ void set_cube(int body_index, glm::mat4* TR) {
 		*TR = glm::scale(*TR, Box_border);
 		break;
 	case 4://아랫면
-		*TR = glm::scale(*TR, Box_border);
+		if (open)
+		{
+			*TR = glm::scale(*TR, glm::vec3(0, 0, 0));
+		}
+		else
+		{
+			*TR = glm::scale(*TR, Box_border);
+		}
 		break;
 	case 5://앞면왼쪽
-		*TR = glm::translate(*TR, -Door_trans);
 		*TR = glm::scale(*TR, Box_border);
 		break;
 	case 6://앞면오른쪽
-		*TR = glm::translate(*TR, Door_trans);
 		*TR = glm::scale(*TR, Box_border);
 		break;
 		break;
@@ -440,79 +458,19 @@ void set_cube(int body_index, glm::mat4* TR) {
 	}
 }
 
-void set_body(int body_index, glm::mat4* TR) {
-	//로봇 자체의 이동
-	*TR = glm::translate(*TR, robot_translate);
-	*TR = glm::rotate(*TR, glm::radians(robot_rotation.x), glm::vec3(1.0, 0.0, 0.0));
-	*TR = glm::rotate(*TR, glm::radians(robot_rotation.z), glm::vec3(0.0, 0.0, 1.0));
-	*TR = glm::rotate(*TR, robot_rotation.y, glm::vec3(0.0, 1.0, 0.0));
-
-	switch (body_index)
-	{
-	case 0://몸통
-		*TR = glm::translate(*TR, glm::vec3(0.0f, 0.0f, 0.0f));
-
-		*TR = glm::scale(*TR, glm::vec3(1, 1.5, 1));
-		break;
-	case 1://머리
-		*TR = glm::translate(*TR, glm::vec3(0.0f, 1.0f, 0.0f));
-
-		*TR = glm::scale(*TR, glm::vec3(0.5, 0.5, 0.5));
-		break;
-
-	case 2://왼다리
-		*TR = glm::translate(*TR, glm::vec3(-0.25f, -0.75f, 0.0f));
-
-		*TR = glm::rotate(*TR, glm::radians(leg_rotate.x), glm::vec3(1.0, 0.0, 0.0));
-		*TR = glm::translate(*TR, glm::vec3(0.0, -0.5f, 0.0f));
-		*TR = glm::scale(*TR, glm::vec3(0.25, 1.0, 0.25));
-		break;
-	case 3://오른다리
-		*TR = glm::translate(*TR, glm::vec3(0.25f, -0.75f, 0.0f));
-
-		*TR = glm::rotate(*TR, glm::radians(-leg_rotate.x), glm::vec3(1.0, 0.0, 0.0));
-		*TR = glm::translate(*TR, glm::vec3(0.0, -0.5f, 0.0f));
-		*TR = glm::scale(*TR, glm::vec3(0.25, 1.0, 0.25));
-		break;
-
-	case 4://왼팔
-		*TR = glm::translate(*TR, glm::vec3(-0.625f, 0.5f, 0.0f));
-
-		*TR = glm::rotate(*TR, glm::radians(-arm_rotate.x), glm::vec3(1.0, 0.0, 0.0));
-		*TR = glm::translate(*TR, glm::vec3(0.0, -0.5f, 0.0f));
-		*TR = glm::scale(*TR, glm::vec3(0.25, 1.0, 0.25));
-		break;
-	case 5://오팔
-		*TR = glm::translate(*TR, glm::vec3(0.625f, 0.5f, 0.0f));
-		//이곳에 회전관련
-		*TR = glm::rotate(*TR, glm::radians(arm_rotate.x), glm::vec3(1.0, 0.0, 0.0));
-		*TR = glm::translate(*TR, glm::vec3(0.0, -0.5f, 0.0f));
-		*TR = glm::scale(*TR, glm::vec3(0.25, 1.0, 0.25));
-		break;
-	case 6://코
-		*TR = glm::translate(*TR, glm::vec3(0.0f, 0.95f, 0.35f));
-
-		*TR = glm::scale(*TR, glm::vec3(0.15, 0.15, 0.15));
-		break;
-	}
-
-
-}
-
 void set_block(int block_index, glm::mat4* TR) {
 	*TR = glm::translate(*TR, Block_location[block_index]);
+	*TR = glm::rotate(*TR, (box_rotation.z), glm::vec3(0, 0, 1));
 	*TR = glm::scale(*TR, Block_scale[block_index]);
 }
 
 void make_block() {
+	float x_location = rand_location(eng);
 	for (int i = 0; i < 3; i++)
 	{
-		float scale = rand_size(eng);
-		Block_scale[i] = { scale,scale,scale };
-
-		Block_location[i].x = rand_location(eng);
-		Block_location[i].z = rand_location(eng);
-		Block_location[i].y = (Block_scale[i].y / 2) - (Box_border.y / 2);
+		Block_location[i].x = x_location;
+		Block_location[i].z = -3 + (i * 1.5);
+		Block_location[i].y = (Block_scale[i].y / 2) - (Box_border.y / 2) + 5.0f;
 	}
 }
 
@@ -521,139 +479,71 @@ GLvoid Reshape(int w, int h)
 	glViewport(0, 0, WIN_W, WIN_H);
 }
 
-bool is_onBlock(glm::vec3 robot_position, int block_index) {
-	float distance = glm::distance(robot_position, glm::vec3(Block_location[block_index].x, 0, Block_location[block_index].z));
-	return distance <= 1.0f;
-}
-
 GLvoid TimerFunction1(int value)
 {
+	boxRotationMatrix = glm::mat4(1.0f);
+	boxRotationMatrix = glm::rotate(boxRotationMatrix, (box_rotation.z), glm::vec3(0, 0, 1));
+
 	glutPostRedisplay();
 
-	if (camera_rotate_y)
-	{
+	if (camera_rotate_y) {
 		camera_rotate.y += camera_y_seta;
 	}
 
-	if (isopen)
+	for (int i = 0; i < Block_location.size(); i++) {
+		Block_velocity[i] += gravity * 0.16f;
+		Block_location[i] += Block_velocity[i] * 0.16f;
+
+		glm::vec4 localPos = glm::inverse(boxRotationMatrix) * glm::vec4(Block_location[i], 1.0f);
+
+		if (localPos.x + Block_scale[i].x / 2 > Box_border.x / 2) {
+			localPos.x = Box_border.x / 2 - Block_scale[i].x / 2;
+		}
+		else if (localPos.x - Block_scale[i].x / 2 < -Box_border.x / 2) {
+			localPos.x = -Box_border.x / 2 + Block_scale[i].x / 2;
+		}
+
+		if (localPos.y + Block_scale[i].y / 2 > Box_border.y / 2) {
+			localPos.y = Box_border.y / 2 - Block_scale[i].y / 2;
+		}
+		else if ((localPos.y - Block_scale[i].y / 2 < -Box_border.y / 2) && !open) {
+			localPos.y = -Box_border.y / 2 + Block_scale[i].y / 2;
+		}
+
+		if (localPos.z + Block_scale[i].z / 2 > Box_border.z / 2) {
+			localPos.z = Box_border.z / 2 - Block_scale[i].z / 2;
+		}
+		else if (localPos.z - Block_scale[i].z / 2 < -Box_border.z / 2) {
+			localPos.z = -Box_border.z / 2 + Block_scale[i].z / 2;
+		}
+
+		Block_location[i] = glm::vec3(boxRotationMatrix * localPos);
+	}
+
+	for (size_t i = 0; i < balls.size(); i++)
 	{
-		if (Door_trans.x < 4.9f)
-		{
-			Door_trans.x += 0.1f;
-		}
+		balls[i].Update();
 	}
-
-	for (int i = 0; i < 3; i++)
-	{
-		if (is_onBlock(glm::vec3(robot_translate.x, 0, robot_translate.z), i) &&
-			robot_translate.y - 1.5 < (Block_location[i].y + (Block_scale[i].y / 2)))
-		{
-			robot_speed.y = 0.8f;
-			is_on = true;
-			on_index = i;
-		}
-	}
-
-	if (is_on)
-	{
-		if (robot_translate.y >= (Block_location[on_index].y + (Block_scale[on_index].y / 2)) + 1.5)
-		{
-			robot_translate.y += robot_speed.y;
-			if (robot_speed.y > -9.8) robot_speed.y -= 0.098f;
-
-			if (robot_translate.y <= ((Block_location[on_index].y + (Block_scale[on_index].y / 2)) + 1.5))
-			{
-				robot_translate.y = (Block_location[on_index].y + (Block_scale[on_index].y / 2)) + 1.6;
-			}
-		}
-		else
-		{
-			robot_translate.y += robot_speed.y;
-		}
-
-		if (!is_onBlock(glm::vec3(robot_translate.x, 0, robot_translate.z), on_index))
-		{
-			is_on = false;
-			on_index = -1;
-		}
-	}
-	else
-	{
-		if (robot_translate.y >= (-Box_border.y / 2) + 1.57f)
-		{
-			robot_translate.y += robot_speed.y;
-			if (robot_speed.y > -9.8) robot_speed.y -= 0.098f;
-
-			if (robot_translate.y <= (-Box_border.y / 2) + 1.57f)
-			{
-				robot_translate.y = (-Box_border.y / 2) + 1.58f;
-			}
-
-			if (robot_translate.y >= (Box_border.y / 2) - 1.5f)
-			{
-				robot_translate.y = (Box_border.y / 2) - 1.5f;
-			}
-		}
-	}
-
-	
-
-	
-	
-	robot_translate.x += robot_speed.x;
-	if (robot_translate.x >= 5.0f) {
-		robot_speed.x = -speed_;
-		robot_translate.x = 4.9f;
-	}
-	else if (robot_translate.x <= -5.0f) {
-		robot_speed.x = speed_;
-		robot_translate.x = -4.9f;
-	}
-
-	robot_translate.z += robot_speed.z;
-	if (robot_translate.z >= 5.0f) {
-		robot_speed.z = -speed_;
-		robot_translate.z = 4.9f;
-	}
-	else if (robot_translate.z <= -5.0f) {
-		robot_speed.z = speed_;
-		robot_translate.z = -4.9f;
-	}
-
-	
-
-
-	robot_rotation.y = atan2(robot_speed.x, robot_speed.z);
-
-	arm_rotate.x += arm_rotate_seta;
-	if (arm_rotate.x < -60.0f)
-		arm_rotate_seta = rotate_seta;
-	else if (arm_rotate.x > 60.0f)
-		arm_rotate_seta = -rotate_seta;
-
-	leg_rotate.x += leg_rotate_seta;
-	if (leg_rotate.x < -60.0f)
-		leg_rotate_seta = rotate_seta;
-	else if (leg_rotate.x > 60.0f)
-		leg_rotate_seta = -rotate_seta;
 
 	glutTimerFunc(10, TimerFunction1, 1);
+}
+
+void make_new_ball() {
+	Ball newball;
+	balls.push_back(newball);
 }
 
 GLvoid Keyboard(unsigned char key, int x, int y)
 {
 	vector<int> new_opnenface = {};
 	switch (key) {
-	case 'o':
-		isopen = !isopen;
-		break;
 	case 'y':
 		camera_rotate_y = !camera_rotate_y;
-		camera_y_seta = 0.1f;
+		camera_y_seta = 1.0f;
 		break;
 	case 'Y':
 		camera_rotate_y = !camera_rotate_y;
-		camera_y_seta = -0.1f;
+		camera_y_seta = -1.0f;
 		break;
 	case 'z':
 		cameraPos.z -= 0.1f;
@@ -667,58 +557,11 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 'X':
 		cameraPos.x -= 0.1f;
 		break;
-		
-	case '+':
-		speed_ += 0.01f;
-		arm_rotate_seta = abs(arm_rotate_seta) + 1.0f;
-		leg_rotate_seta = abs(leg_rotate_seta) + 1.0f;
+	case 'b':
+		make_new_ball();
 		break;
-	case '-':
-		speed_ -= 0.01f;
-		arm_rotate_seta = abs(abs(arm_rotate_seta) - 1.0f);
-		leg_rotate_seta = abs(abs(leg_rotate_seta) - 1.0f);
-		break;
-	case 'j':
-		robot_speed.y = 0.8f;
-		break;
-
-	case 'w':
-		robot_speed.z = 0.05f;
-		robot_speed.x = 0;
-		break;
-	case 'a':
-		robot_speed.x = -0.05f;
-		robot_speed.z = 0;
-		break;
-	case 's':
-		robot_speed.z = -0.05f;
-		robot_speed.x = 0;
-		break;
-	case 'd':
-		robot_speed.x = 0.05f;
-		robot_speed.z = 0;
-		break;
-	case 'i':
-		cameraPos = { 0.0f,0.0f,15.0f };
-		camera_rotate = { 0.0f,0.0f,0.0f };
-		camera_rotate_y = false;
-
-		isopen = false;
-
-		Door_trans = { 5.0,0.0,0.0 };
-
-		robot_translate = { 0.0,0.0,0.0 };
-		robot_speed = { 0.05,0,0.05 };
-		speed_ = 0.05f;
-
-		robot_rotation = { 0.0,90.0,0.0 };
-
-
-		rotate_seta = 2.0f;
-		arm_rotate = { 0,0,0 };
-		arm_rotate_seta = 2.0f;
-		leg_rotate = { 0,0,0 };
-		leg_rotate_seta = 2.0f;
+	case 'o':
+		open = true;
 		break;
 	case 'q':
 		glutLeaveMainLoop();
@@ -727,14 +570,29 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	glutPostRedisplay();
 }
 
-void Mouse(int x, int y)
+void Mouse(int button, int state, int x, int y)
+{
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+		clicked = true;
+
+	}
+	else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP)
+	{
+		clicked = false;
+	}
+
+	glutPostRedisplay();
+}
+
+void Motion(int x, int y)
 {
 	GLfloat half_w = WIN_W / 2.0f;
-	mx = (x - half_w) / half_w;
-	my = (half_w - y) / half_w;
+	if (clicked) {
+		mx = (x - half_w) / half_w;
+		my = (half_w - y) / half_w;
+		box_rotation.z = glm::atan(my / mx);
+	}
 
-	robot_speed.z = (-my)/10;
-	robot_speed.x = (mx)/10;
 	glutPostRedisplay();
 }
 
@@ -771,6 +629,7 @@ int main(int argc, char** argv)
 		cerr << "Error: VAO 생성 실패" << endl;
 		std::exit(EXIT_FAILURE);
 	}
+
 	glutTimerFunc(10, TimerFunction1, 1);
 
 	make_block();
@@ -778,7 +637,7 @@ int main(int argc, char** argv)
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
 	glutKeyboardFunc(Keyboard);
-	//glutMouseFunc(Mouse);
-	glutMotionFunc(Mouse);
+	glutMouseFunc(Mouse);
+	glutMotionFunc(Motion);
 	glutMainLoop();
 }

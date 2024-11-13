@@ -39,10 +39,10 @@
     <ClCompile Include="20f.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="21.cpp">
+    <ClCompile Include="21f.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="22.cpp">
+    <ClCompile Include="22f.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
