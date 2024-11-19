@@ -45,6 +45,9 @@
     <ClCompile Include="22f.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="23.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="fragment.glsl">
