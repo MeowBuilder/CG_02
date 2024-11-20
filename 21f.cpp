@@ -72,17 +72,17 @@ bool isopen = false;
 glm::vec3 Door_trans = { 0.0,0.0,0.0 };
 
 //·Îº¿ °ü·Ã º¤ÅÍ
-glm::vec3 robot_translate = { 0.0,0.0,0.0 };
-glm::vec3 robot_speed = { 0.05,0,0.05 };
+glm::vec3 robot.robot_translate = { 0.0,0.0,0.0 };
+glm::vec3 robot.robot_speed = { 0.05,0,0.05 };
 float speed_ = 0.05f;
 
-glm::vec3 robot_rotation = { 0.0,90.0,0.0 };
+glm::vec3 robot.robot_rotation = { 0.0,90.0,0.0 };
 
-float rotate_seta = 2.0f;
-glm::vec3 arm_rotate = { 0,0,0 };
-float arm_rotate_seta = 2.0f;
-glm::vec3 leg_rotate = { 0,0,0 };
-float leg_rotate_seta = 2.0f;
+float robot.rotate_seta = 2.0f;
+glm::vec3 robot.arm_rotate = { 0,0,0 };
+float robot.arm_rotate_seta = 2.0f;
+glm::vec3 robot.leg_rotate = { 0,0,0 };
+float robot.leg_rotate_seta = 2.0f;
 
 //Àå¾Ö¹° °ü·Ã º¤ÅÍ
 std::vector<glm::vec3> Block_location = { {},{},{} };
@@ -447,10 +447,10 @@ void set_cube(int body_index, glm::mat4* TR) {
 
 void set_body(int body_index, glm::mat4* TR) {
 	//·Îº¿ ÀÚÃ¼ÀÇ ÀÌµ¿
-	*TR = glm::translate(*TR, robot_translate);
-	*TR = glm::rotate(*TR, glm::radians(robot_rotation.x), glm::vec3(1.0, 0.0, 0.0));
-	*TR = glm::rotate(*TR, glm::radians(robot_rotation.z), glm::vec3(0.0, 0.0, 1.0));
-	*TR = glm::rotate(*TR, robot_rotation.y, glm::vec3(0.0, 1.0, 0.0));
+	*TR = glm::translate(*TR, robot.robot_translate);
+	*TR = glm::rotate(*TR, glm::radians(robot.robot_rotation.x), glm::vec3(1.0, 0.0, 0.0));
+	*TR = glm::rotate(*TR, glm::radians(robot.robot_rotation.z), glm::vec3(0.0, 0.0, 1.0));
+	*TR = glm::rotate(*TR, robot.robot_rotation.y, glm::vec3(0.0, 1.0, 0.0));
 
 	switch (body_index)
 	{
@@ -468,14 +468,14 @@ void set_body(int body_index, glm::mat4* TR) {
 	case 2://¿Þ´Ù¸®
 		*TR = glm::translate(*TR, glm::vec3(-0.25f, -0.75f, 0.0f));
 
-		*TR = glm::rotate(*TR, glm::radians(leg_rotate.x), glm::vec3(1.0, 0.0, 0.0));
+		*TR = glm::rotate(*TR, glm::radians(robot.leg_rotate.x), glm::vec3(1.0, 0.0, 0.0));
 		*TR = glm::translate(*TR, glm::vec3(0.0, -0.5f, 0.0f));
 		*TR = glm::scale(*TR, glm::vec3(0.25, 1.0, 0.25));
 		break;
 	case 3://¿À¸¥´Ù¸®
 		*TR = glm::translate(*TR, glm::vec3(0.25f, -0.75f, 0.0f));
 
-		*TR = glm::rotate(*TR, glm::radians(-leg_rotate.x), glm::vec3(1.0, 0.0, 0.0));
+		*TR = glm::rotate(*TR, glm::radians(-robot.leg_rotate.x), glm::vec3(1.0, 0.0, 0.0));
 		*TR = glm::translate(*TR, glm::vec3(0.0, -0.5f, 0.0f));
 		*TR = glm::scale(*TR, glm::vec3(0.25, 1.0, 0.25));
 		break;
@@ -483,14 +483,14 @@ void set_body(int body_index, glm::mat4* TR) {
 	case 4://¿ÞÆÈ
 		*TR = glm::translate(*TR, glm::vec3(-0.625f, 0.5f, 0.0f));
 
-		*TR = glm::rotate(*TR, glm::radians(-arm_rotate.x), glm::vec3(1.0, 0.0, 0.0));
+		*TR = glm::rotate(*TR, glm::radians(-robot.arm_rotate.x), glm::vec3(1.0, 0.0, 0.0));
 		*TR = glm::translate(*TR, glm::vec3(0.0, -0.5f, 0.0f));
 		*TR = glm::scale(*TR, glm::vec3(0.25, 1.0, 0.25));
 		break;
 	case 5://¿ÀÆÈ
 		*TR = glm::translate(*TR, glm::vec3(0.625f, 0.5f, 0.0f));
 		//ÀÌ°÷¿¡ È¸Àü°ü·Ã
-		*TR = glm::rotate(*TR, glm::radians(arm_rotate.x), glm::vec3(1.0, 0.0, 0.0));
+		*TR = glm::rotate(*TR, glm::radians(robot.arm_rotate.x), glm::vec3(1.0, 0.0, 0.0));
 		*TR = glm::translate(*TR, glm::vec3(0.0, -0.5f, 0.0f));
 		*TR = glm::scale(*TR, glm::vec3(0.25, 1.0, 0.25));
 		break;
@@ -557,10 +557,10 @@ GLvoid TimerFunction1(int value)
 
 	for (int i = 0; i < 3; i++)
 	{
-		if (is_onBlock(glm::vec3(robot_translate.x, 0, robot_translate.z), i) &&
-			robot_translate.y - 1.5 < (Block_location[i].y + (Block_scale[i].y / 2)))
+		if (is_onBlock(glm::vec3(robot.robot_translate.x, 0, robot.robot_translate.z), i) &&
+			robot.robot_translate.y - 1.5 < (Block_location[i].y + (Block_scale[i].y / 2)))
 		{
-			robot_speed.y = 0.8f;
+			robot.robot_speed.y = 0.8f;
 			is_on = true;
 			on_index = i;
 		}
@@ -568,22 +568,22 @@ GLvoid TimerFunction1(int value)
 
 	if (is_on)
 	{
-		if (robot_translate.y >= (Block_location[on_index].y + (Block_scale[on_index].y / 2)) + 1.5)
+		if (robot.robot_translate.y >= (Block_location[on_index].y + (Block_scale[on_index].y / 2)) + 1.5)
 		{
-			robot_translate.y += robot_speed.y;
-			if (robot_speed.y > -9.8) robot_speed.y -= 0.098f;
+			robot.robot_translate.y += robot.robot_speed.y;
+			if (robot.robot_speed.y > -9.8) robot.robot_speed.y -= 0.098f;
 
-			if (robot_translate.y <= ((Block_location[on_index].y + (Block_scale[on_index].y / 2)) + 1.5))
+			if (robot.robot_translate.y <= ((Block_location[on_index].y + (Block_scale[on_index].y / 2)) + 1.5))
 			{
-				robot_translate.y = (Block_location[on_index].y + (Block_scale[on_index].y / 2)) + 1.6;
+				robot.robot_translate.y = (Block_location[on_index].y + (Block_scale[on_index].y / 2)) + 1.6;
 			}
 		}
 		else
 		{
-			robot_translate.y += robot_speed.y;
+			robot.robot_translate.y += robot.robot_speed.y;
 		}
 
-		if (!is_onBlock(glm::vec3(robot_translate.x, 0, robot_translate.z), on_index))
+		if (!is_onBlock(glm::vec3(robot.robot_translate.x, 0, robot.robot_translate.z), on_index))
 		{
 			is_on = false;
 			on_index = -1;
@@ -591,19 +591,19 @@ GLvoid TimerFunction1(int value)
 	}
 	else
 	{
-		if (robot_translate.y >= (-Box_border.y / 2) + 1.57f)
+		if (robot.robot_translate.y >= (-Box_border.y / 2) + 1.57f)
 		{
-			robot_translate.y += robot_speed.y;
-			if (robot_speed.y > -9.8) robot_speed.y -= 0.098f;
+			robot.robot_translate.y += robot.robot_speed.y;
+			if (robot.robot_speed.y > -9.8) robot.robot_speed.y -= 0.098f;
 
-			if (robot_translate.y <= (-Box_border.y / 2) + 1.57f)
+			if (robot.robot_translate.y <= (-Box_border.y / 2) + 1.57f)
 			{
-				robot_translate.y = (-Box_border.y / 2) + 1.58f;
+				robot.robot_translate.y = (-Box_border.y / 2) + 1.58f;
 			}
 
-			if (robot_translate.y >= (Box_border.y / 2) - 1.5f)
+			if (robot.robot_translate.y >= (Box_border.y / 2) - 1.5f)
 			{
-				robot_translate.y = (Box_border.y / 2) - 1.5f;
+				robot.robot_translate.y = (Box_border.y / 2) - 1.5f;
 			}
 		}
 	}
@@ -612,42 +612,42 @@ GLvoid TimerFunction1(int value)
 
 	
 	
-	robot_translate.x += robot_speed.x;
-	if (robot_translate.x >= 5.0f) {
-		robot_speed.x = -speed_;
-		robot_translate.x = 4.9f;
+	robot.robot_translate.x += robot.robot_speed.x;
+	if (robot.robot_translate.x >= 5.0f) {
+		robot.robot_speed.x = -speed_;
+		robot.robot_translate.x = 4.9f;
 	}
-	else if (robot_translate.x <= -5.0f) {
-		robot_speed.x = speed_;
-		robot_translate.x = -4.9f;
+	else if (robot.robot_translate.x <= -5.0f) {
+		robot.robot_speed.x = speed_;
+		robot.robot_translate.x = -4.9f;
 	}
 
-	robot_translate.z += robot_speed.z;
-	if (robot_translate.z >= 5.0f) {
-		robot_speed.z = -speed_;
-		robot_translate.z = 4.9f;
+	robot.robot_translate.z += robot.robot_speed.z;
+	if (robot.robot_translate.z >= 5.0f) {
+		robot.robot_speed.z = -speed_;
+		robot.robot_translate.z = 4.9f;
 	}
-	else if (robot_translate.z <= -5.0f) {
-		robot_speed.z = speed_;
-		robot_translate.z = -4.9f;
+	else if (robot.robot_translate.z <= -5.0f) {
+		robot.robot_speed.z = speed_;
+		robot.robot_translate.z = -4.9f;
 	}
 
 	
 
 
-	robot_rotation.y = atan2(robot_speed.x, robot_speed.z);
+	robot.robot_rotation.y = atan2(robot.robot_speed.x, robot.robot_speed.z);
 
-	arm_rotate.x += arm_rotate_seta;
-	if (arm_rotate.x < -60.0f)
-		arm_rotate_seta = rotate_seta;
-	else if (arm_rotate.x > 60.0f)
-		arm_rotate_seta = -rotate_seta;
+	robot.arm_rotate.x += robot.arm_rotate_seta;
+	if (robot.arm_rotate.x < -60.0f)
+		robot.arm_rotate_seta = robot.rotate_seta;
+	else if (robot.arm_rotate.x > 60.0f)
+		robot.arm_rotate_seta = -robot.rotate_seta;
 
-	leg_rotate.x += leg_rotate_seta;
-	if (leg_rotate.x < -60.0f)
-		leg_rotate_seta = rotate_seta;
-	else if (leg_rotate.x > 60.0f)
-		leg_rotate_seta = -rotate_seta;
+	robot.leg_rotate.x += robot.leg_rotate_seta;
+	if (robot.leg_rotate.x < -60.0f)
+		robot.leg_rotate_seta = robot.rotate_seta;
+	else if (robot.leg_rotate.x > 60.0f)
+		robot.leg_rotate_seta = -robot.rotate_seta;
 
 	glutTimerFunc(10, TimerFunction1, 1);
 }
@@ -683,36 +683,36 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case '+':
 		speed_ += 0.01f;
 
-		arm_rotate_seta = abs(arm_rotate_seta) + 1.0f;
-		leg_rotate_seta = abs(leg_rotate_seta) + 1.0f;
-		rotate_seta = abs(arm_rotate_seta);
+		robot.arm_rotate_seta = abs(robot.arm_rotate_seta) + 1.0f;
+		robot.leg_rotate_seta = abs(robot.leg_rotate_seta) + 1.0f;
+		robot.rotate_seta = abs(robot.arm_rotate_seta);
 		break;
 	case '-':
 		speed_ -= 0.01f;
 
-		arm_rotate_seta = abs(abs(arm_rotate_seta) - 1.0f);
-		leg_rotate_seta = abs(abs(leg_rotate_seta) - 1.0f);
-		rotate_seta = abs(arm_rotate_seta);
+		robot.arm_rotate_seta = abs(abs(robot.arm_rotate_seta) - 1.0f);
+		robot.leg_rotate_seta = abs(abs(robot.leg_rotate_seta) - 1.0f);
+		robot.rotate_seta = abs(robot.arm_rotate_seta);
 		break;
 	case 'j':
-		robot_speed.y = 0.8f;
+		robot.robot_speed.y = 0.8f;
 		break;
 
 	case 'w':
-		robot_speed.z = speed_;
-		robot_speed.x = 0;
+		robot.robot_speed.z = speed_;
+		robot.robot_speed.x = 0;
 		break;
 	case 'a':
-		robot_speed.x = -speed_;
-		robot_speed.z = 0;
+		robot.robot_speed.x = -speed_;
+		robot.robot_speed.z = 0;
 		break;
 	case 's':
-		robot_speed.z = -speed_;
-		robot_speed.x = 0;
+		robot.robot_speed.z = -speed_;
+		robot.robot_speed.x = 0;
 		break;
 	case 'd':
-		robot_speed.x = speed_;
-		robot_speed.z = 0;
+		robot.robot_speed.x = speed_;
+		robot.robot_speed.z = 0;
 		break;
 	case 'i':
 		cameraPos = { 0.0f,0.0f,15.0f };
@@ -723,18 +723,18 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 
 		Door_trans = { 0.0,0.0,0.0 };
 
-		robot_translate = { 0.0,0.0,0.0 };
-		robot_speed = { 0.05,0,0.05 };
+		robot.robot_translate = { 0.0,0.0,0.0 };
+		robot.robot_speed = { 0.05,0,0.05 };
 		speed_ = 0.05f;
 
-		robot_rotation = { 0.0,90.0,0.0 };
+		robot.robot_rotation = { 0.0,90.0,0.0 };
 
 
-		rotate_seta = 2.0f;
-		arm_rotate = { 0,0,0 };
-		arm_rotate_seta = 2.0f;
-		leg_rotate = { 0,0,0 };
-		leg_rotate_seta = 2.0f;
+		robot.rotate_seta = 2.0f;
+		robot.arm_rotate = { 0,0,0 };
+		robot.arm_rotate_seta = 2.0f;
+		robot.leg_rotate = { 0,0,0 };
+		robot.leg_rotate_seta = 2.0f;
 		break;
 	case 'q':
 		glutLeaveMainLoop();
@@ -749,8 +749,8 @@ void Mouse(int x, int y)
 	mx = (x - half_w) / half_w;
 	my = (half_w - y) / half_w;
 
-	robot_speed.z = (-my)/10;
-	robot_speed.x = (mx)/10;
+	robot.robot_speed.z = (-my)/10;
+	robot.robot_speed.x = (mx)/10;
 	glutPostRedisplay();
 }
 
