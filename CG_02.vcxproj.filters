@@ -45,7 +45,7 @@
     <ClCompile Include="22f.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="23.cpp">
+    <ClCompile Include="23f.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
